@@ -1,0 +1,137 @@
+{
+  "host": "10.56.37.229",
+  "startedAt": "2026-10-16T06:48:17.958Z",
+  "steps": [
+    {
+      "name": "signed-in",
+      "at": "2026-10-16T06:48:18.825Z",
+      "user": "admin@techpio.test",
+      "role": null,
+      "environment": "production",
+      "mfaRequired": true
+    },
+    {
+      "name": "http-origin-refused",
+      "at": "2026-10-16T06:48:18.832Z",
+      "status": 403,
+      "problem": "urn:psacc:problem:csrf-origin"
+    },
+    {
+      "name": "onboarded",
+      "at": "2026-10-16T06:48:19.298Z",
+      "client": "CL-00002",
+      "psa": "PSA-00002",
+      "license": "LIC-00002",
+      "deployment": "DEP-00002"
+    },
+    {
+      "name": "package",
+      "at": "2026-10-16T06:48:19.375Z",
+      "number": 1,
+      "bytes": 28861,
+      "image": {
+        "repository": "ghcr.io/dalbeirdev/psa-edge",
+        "version": "0.1.0",
+        "digest": "sha256:6e1a1de86b2dba6ef013659536c3e18379cf69dfe6907ac91282ae2425335a14"
+      },
+      "files": 19
+    },
+    {
+      "name": "appliance-installed",
+      "at": "2026-10-16T06:48:36.323Z",
+      "project": "psacc-dep-00002",
+      "production": true,
+      "image": "localhost:5000/psacc/psa-edge@sha256:6e1a1de86b2d…"
+    },
+    {
+      "name": "enrolled",
+      "at": "2026-10-16T06:48:39.434Z",
+      "lifecycle": "verified",
+      "gatewayUrl": "https://10.56.37.229:8643",
+      "certificate": "CN=7b258a07-9f0a-4560-83a6-39367cf1f514, OU=DEP-00002, O=PSA Control Center Agent"
+    },
+    {
+      "name": "verify-sh",
+      "at": "2026-10-16T06:48:43.687Z",
+      "exit": 0,
+      "failures": 0
+    },
+    {
+      "name": "psa-connection-tested-on-appliance",
+      "at": "2026-10-16T06:48:44.467Z",
+      "verified": true
+    },
+    {
+      "name": "health",
+      "at": "2026-10-16T06:48:44.493Z",
+      "state": "healthy",
+      "findings": [
+        "backup_none",
+        "psa_not_configured"
+      ]
+    },
+    {
+      "name": "decommissioned",
+      "at": "2026-10-16T06:48:44.528Z",
+      "fromState": "verified",
+      "identity": {
+        "tokensRevoked": 0,
+        "packagesRevoked": 0,
+        "commandsCancelled": 0,
+        "certificatesRevoked": 1
+      }
+    },
+    {
+      "name": "appliance-saw-decommissioning",
+      "at": "2026-10-16T06:49:37.470Z"
+    },
+    {
+      "name": "wiped",
+      "at": "2026-10-16T06:49:50.948Z",
+      "wrongCodeRefused": true,
+      "leftovers": [
+        "0",
+        "0",
+        "secrets-gone"
+      ]
+    },
+    {
+      "name": "removed",
+      "at": "2026-10-16T06:49:51.020Z",
+      "deleted": {
+        "reports": 9,
+        "commands": 0,
+        "packages": 1,
+        "heartbeats": 0,
+        "deployments": 1,
+        "certificates": 1,
+        "healthEvents": 1,
+        "latestReports": 9,
+        "tableInventory": 14,
+        "enrollmentTokens": 1,
+        "packageDownloads": 1
+      },
+      "afterwards": 404
+    },
+    {
+      "name": "audit-trail",
+      "at": "2026-10-16T06:49:51.038Z",
+      "has": [
+        "client.onboarded",
+        "agent.enrolled",
+        "deployment.decommissioned",
+        "deployment.removed"
+      ]
+    },
+    {
+      "name": "screenshots",
+      "at": "2026-10-16T06:49:54.695Z",
+      "files": [
+        "01-login-over-edge.png",
+        "02-dashboard-production-mode.png",
+        "03-client-after-rehearsal.png"
+      ]
+    }
+  ],
+  "finishedAt": "2026-10-16T06:49:55.185Z"
+}

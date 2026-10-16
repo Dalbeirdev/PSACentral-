@@ -1,0 +1,66 @@
+$ scripts/uninstall.sh --wipe --confirm DEP-00000
+==> Appliance DEP-00002 on this host
+SERVICE         STATE     STATUS
+edge-agent      running   Up About a minute
+edge-api        running   Up About a minute (healthy)
+edge-backup     running   Up About a minute
+edge-postgres   running   Up About a minute (healthy)
+edge-worker     running   Up About a minute
+ERROR: --wipe needs --confirm DEP-00002 (the deployment ID, exactly as shown in the dashboard).
+(exit 1)
+
+$ scripts/uninstall.sh --wipe --confirm DEP-00002
+==> Appliance DEP-00002 on this host
+SERVICE         STATE     STATUS
+edge-agent      running   Up About a minute
+edge-api        running   Up About a minute (healthy)
+edge-backup     running   Up About a minute
+edge-postgres   running   Up About a minute (healthy)
+edge-worker     running   Up About a minute
+
+==> Wiping DEP-00002: containers, networks, data volumes (database, logs, backups, agent state), ./secrets and .env
+This permanently deletes the client's operational database on this host, including locally stored tickets and the encrypted PSA credentials.
+
+Removed: no container, network, volume or secret of psacc-dep-00002 remains on this host.
+Delete this folder when the package is no longer needed. The PSA Edge image can be removed with 'docker image rm' once no other deployment on this host uses it.
+Container psacc-dep-00002-edge-backup-1  Stopping
+ Container psacc-dep-00002-edge-api-1  Stopping
+ Container psacc-dep-00002-edge-worker-1  Stopping
+ Container psacc-dep-00002-edge-agent-1  Stopping
+ Container psacc-dep-00002-edge-api-1  Stopped
+ Container psacc-dep-00002-edge-api-1  Removing
+ Container psacc-dep-00002-edge-api-1  Removed
+ Container psacc-dep-00002-edge-agent-1  Stopped
+ Container psacc-dep-00002-edge-agent-1  Removing
+ Container psacc-dep-00002-edge-worker-1  Stopped
+ Container psacc-dep-00002-edge-worker-1  Removing
+ Container psacc-dep-00002-edge-agent-1  Removed
+ Container psacc-dep-00002-edge-worker-1  Removed
+ Container psacc-dep-00002-edge-backup-1  Stopped
+ Container psacc-dep-00002-edge-backup-1  Removing
+ Container psacc-dep-00002-edge-backup-1  Removed
+ Container psacc-dep-00002-edge-migrate-1  Stopping
+ Container psacc-dep-00002-edge-migrate-1  Stopped
+ Container psacc-dep-00002-edge-migrate-1  Removing
+ Container psacc-dep-00002-edge-migrate-1  Removed
+ Container psacc-dep-00002-edge-postgres-1  Stopping
+ Container psacc-dep-00002-edge-postgres-1  Stopped
+ Container psacc-dep-00002-edge-postgres-1  Removing
+ Container psacc-dep-00002-edge-postgres-1  Removed
+ Volume psacc-dep-00002_pgdata  Removing
+ Network psacc-dep-00002_edge-egress  Removing
+ Volume psacc-dep-00002_agent-state  Removing
+ Network psacc-dep-00002_edge-internal  Removing
+ Volume psacc-dep-00002_edge-backups  Removing
+ Volume psacc-dep-00002_edge-logs  Removing
+ Volume psacc-dep-00002_pgdata  Removed
+ Volume psacc-dep-00002_edge-logs  Removed
+ Volume psacc-dep-00002_agent-state  Removed
+ Volume psacc-dep-00002_edge-backups  Removed
+ Network psacc-dep-00002_edge-egress  Removed
+ Network psacc-dep-00002_edge-internal  Removed
+(exit 0)
+
+0
+0
+secrets-gone

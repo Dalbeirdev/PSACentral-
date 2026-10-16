@@ -31,8 +31,10 @@ const waitFor = async (fn, ms, label) => { const end = Date.now() + ms; while (D
 // ---- a tiny cookie-aware client (fetch) ---------------------------------------------------------------
 const jar = new Map();
 const cookieHeader = () => [...jar].map(([k, v]) => `${k}=${v}`).join('; ');
+// Production uses __Host- prefixed cookie names; the CSRF cookie is found by its suffix.
+const csrf = () => [...jar].find(([k]) => k.endsWith('psacc_csrf'))?.[1];
 async function api(method, path, body, extra = {}) {
-  const headers = { accept: 'application/json', origin: base, ...(body !== undefined ? { 'content-type': 'application/json' } : {}), ...(jar.get('psacc_csrf') ? { 'x-csrf-token': jar.get('psacc_csrf') } : {}), cookie: cookieHeader(), ...extra };
+  const headers = { accept: 'application/json', origin: base, ...(body !== undefined ? { 'content-type': 'application/json' } : {}), ...(csrf() ? { 'x-csrf-token': csrf() } : {}), cookie: cookieHeader(), ...extra };
   const r = await fetch(`${base}/api/v1${path}`, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined, redirect: 'manual' });
   for (const c of r.headers.getSetCookie?.() ?? []) { const [kv] = c.split(';'); const i = kv.indexOf('='); jar.set(kv.slice(0, i), kv.slice(i + 1)); }
   const text = await r.text();
@@ -40,7 +42,7 @@ async function api(method, path, body, extra = {}) {
   return { status: r.status, body: json, text, bytes: json === null ? Buffer.from(text, 'binary') : null, raw: r };
 }
 async function apiBinary(method, path) {
-  const r = await fetch(`${base}/api/v1${path}`, { method, headers: { origin: base, 'x-csrf-token': jar.get('psacc_csrf'), cookie: cookieHeader() } });
+  const r = await fetch(`${base}/api/v1${path}`, { method, headers: { origin: base, 'x-csrf-token': csrf(), cookie: cookieHeader() } });
   if (!r.ok) throw new Error(`${method} ${path} → ${r.status}`);
   return Buffer.from(await r.arrayBuffer());
 }
@@ -83,11 +85,11 @@ if (me.session.state === 'mfa_setup_required') {
 }
 me = must(await api('GET', '/auth/me'), 200, 'me active');
 if (me.session.state !== 'active') throw new Error(`session state ${me.session.state}`);
-const info = must(await api('GET', '/system/info'), 200, 'system info').environment ?? null;
+const infoRes = await api('GET', '/system/info'); const info = infoRes.status === 200 ? (infoRes.body.environment ?? null) : `(${infoRes.status})`;
 step('signed-in', { user: me.user.email, role: me.user.roles?.map((r) => r.key ?? r) ?? null, environment: info, mfaRequired: true });
 // Production refuses an http origin: a request with a plain-http Origin header must be rejected.
-const bad = await api('GET', '/auth/me', undefined, { origin: `http://${HOST}` });
-step('http-origin-refused', { status: bad.status });
+const bad = await api('POST', '/onboarding/drafts', undefined, { origin: `http://${HOST}` });
+step('http-origin-refused', { status: bad.status, problem: bad.body?.type });
 
 // ---- 2. onboarding through the wizard API ---------------------------------------------------------------
 const hostIp = sh(`ip -4 route get 1.1.1.1 | awk '{for(i=1;i<=NF;i++) if($i=="src") print $(i+1)}'`).out;
@@ -135,8 +137,11 @@ const adminBase = `http://127.0.0.1:${adminPort}`;
 const curl = (args) => sh(`curl -s -o /tmp/psacc-rehearsal-appliance/body -w '%{http_code}' -b /tmp/psacc-rehearsal-appliance/jar -c /tmp/psacc-rehearsal-appliance/jar ${args}; echo; cat /tmp/psacc-rehearsal-appliance/body`, 60_000).out;
 // The image is pulled by digest from the rehearsal registry (same digest the Control Plane pinned).
 const pinned = `localhost:5000/psacc/psa-edge@${pkg.image.digest}`;
+// The production overlay also wants PostgreSQL pinned by digest (the operator's choice on a real host).
+const pgPinned = sh(`docker image inspect postgres:17-alpine --format '{{index .RepoDigests 0}}' 2>/dev/null || (docker pull -q postgres:17-alpine >/dev/null && docker image inspect postgres:17-alpine --format '{{index .RepoDigests 0}}')`).out;
+if (!/@sha256:/.test(pgPinned)) throw new Error(`no pinned PostgreSQL image: ${pgPinned}`);
 try {
-  let r = sh(`rm -rf /tmp/psacc-rehearsal-appliance && mkdir -p /tmp/psacc-rehearsal-appliance && cd /tmp/psacc-rehearsal-appliance && unzip -q "${unix(join(winTmp, pkg.fileName))}" && cd ${project} && grep -c '@sha256:' compose.production.yaml && cp config/edge.env.template .env && echo 'PSA_EDGE_IMAGE=${pinned}' >> .env && sha256sum -c CHECKSUMS.sha256 | grep -c OK && scripts/install.sh --production`);
+  let r = sh(`rm -rf /tmp/psacc-rehearsal-appliance && mkdir -p /tmp/psacc-rehearsal-appliance && cd /tmp/psacc-rehearsal-appliance && unzip -q "${unix(join(winTmp, pkg.fileName))}" && cd ${project} && grep -c '@sha256:' compose.production.yaml && cp config/edge.env.template .env && echo 'PSA_EDGE_IMAGE=${pinned}' >> .env && echo 'PSA_POSTGRES_IMAGE=${pgPinned}' >> .env && sha256sum -c CHECKSUMS.sha256 | grep -c OK && scripts/install.sh --production`);
   if (r.code !== 0) throw new Error(`install failed: ${r.err || r.out}`);
   step('appliance-installed', { project, production: true, image: pinned.replace(/@sha256:(.{12}).*/, '@sha256:$1…') });
   await waitFor(async () => ['enrolled', 'verified'].includes((await api('GET', `/deployments/${res.deploymentId}`)).body.lifecycleState), 180_000, 'enrollment over the public gateway');
@@ -175,7 +180,7 @@ try {
   // ---- 5. a browser look through the edge (sign-in page and the dashboard after MFA) ----------------------
   const b = await chromium.launch({ channel: 'msedge' });
   const ctx = await b.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
-  await ctx.addCookies([...jar].map(([name, value]) => ({ name, value, domain: HOST, path: '/', secure: true, httpOnly: name === 'psacc_session', sameSite: 'Lax' })));
+  await ctx.addCookies([...jar].map(([name, value]) => ({ name, value, url: base, secure: true, httpOnly: name.endsWith('psacc_session'), sameSite: 'Lax' })));
   const p = await ctx.newPage();
   await p.goto(`${base}/dashboard`, { waitUntil: 'networkidle' });
   await p.screenshot({ path: `${outDir}02-dashboard-production-mode.png` });

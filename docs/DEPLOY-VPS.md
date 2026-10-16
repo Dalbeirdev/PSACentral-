@@ -88,6 +88,21 @@ public certificate is involved there).
 | Certificate renewal | automatic (certbot sidecar, nginx reloads every 6 h); `status` shows the dates |
 | Stop everything | `scripts/vps/cp.sh down` (data stays in the `psacc-cp-pgdata` volume) |
 
+## Rehearsed on a workstation (2026-10-16)
+
+The whole procedure was run on the development machine before any VPS existed, with the same scripts
+(`PSACC_SKIP_FIREWALL=1`, the machine's address as the domain, `cp.sh cert --self-signed`, a local
+registry instead of GHCR): setup, build, push with digest pinning, start, bootstrap, MFA sign-in in
+production mode, onboarding, a real appliance installed with the production overlay and enrolled over
+the public gateway address, decommissioning, host-side wipe and removal. Evidence:
+`docs/reports/vps-rehearsal/` (`rehearsal.json`, `uninstall-sh-output.txt`, screenshots). Two things
+it surfaced, both by design:
+
+- a client host installing with `scripts/install.sh --production` must set `PSA_POSTGRES_IMAGE` (the
+  PostgreSQL image pinned by digest) in the package's `.env`, next to the already pinned edge image;
+- in production the API's cookies carry the `__Host-` prefix; browsers handle that transparently, scripts
+  must look the cookie up by suffix.
+
 ## What is exposed
 
 ```
