@@ -20,8 +20,9 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    # Reload periodically so renewed certificates are picked up without a restart.
-    command: ["/bin/sh", "-c", "while :; do sleep 6h; nginx -s reload; done & exec nginx -g 'daemon off;'"]
+    # The image renders /etc/nginx/templates only when its command starts with `nginx`, so the renderer is
+    # called explicitly here; then nginx reloads every six hours to pick up renewed certificates.
+    command: ["/bin/sh", "-c", "/docker-entrypoint.d/20-envsubst-on-templates.sh && (while :; do sleep 6h; nginx -s reload; done &) && exec nginx -g 'daemon off;'"]
     depends_on:
       web:
         condition: service_healthy

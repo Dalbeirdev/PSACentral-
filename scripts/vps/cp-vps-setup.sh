@@ -63,6 +63,8 @@ fi
 chmod +x "$TARGET"/scripts/vps/*.sh
 
 ENV_FILE="$TARGET/infra/control-plane/.env"
+case "$EDGE_REPO" in *:*) fail "PSACC_EDGE_IMAGE_REPOSITORY must not contain a port ($EDGE_REPO): use a registry host such as ghcr.io/<owner>/psa-edge." ;; esac
+case "$DOMAIN" in *[a-z]*) ORIGINS="https://$DOMAIN,https://www.$DOMAIN" ;; *) ORIGINS="https://$DOMAIN" ;; esac  # an IP address has no www
 step "Production environment file $ENV_FILE"
 if [ -f "$ENV_FILE" ]; then
   echo "  exists — kept (delete it to regenerate; secrets are never printed)."
@@ -84,7 +86,7 @@ PSACC_DOMAIN=$DOMAIN
 LETSENCRYPT_EMAIL=$ADMIN_EMAIL
 WEB_PORT=3410
 API_PORT=4410
-APP_ALLOWED_ORIGINS=https://$DOMAIN,https://www.$DOMAIN
+APP_ALLOWED_ORIGINS=$ORIGINS
 AGENT_GATEWAY_BIND=0.0.0.0
 AGENT_GATEWAY_PORT=$GATEWAY_PORT
 AGENT_GATEWAY_URL=https://$DOMAIN:$GATEWAY_PORT
@@ -111,7 +113,7 @@ fi
 cat <<EOF
 
 Prepared. Remaining steps (details in docs/DEPLOY-VPS.md):
-  1. Point the DNS A record of $DOMAIN (and www) at this server's address, then wait until it resolves.
+  1. Point the DNS A record of $DOMAIN (and www) at this server's address, then wait until it resolves (skip for an IP-address rehearsal).
   2. cd $TARGET && scripts/vps/cp.sh build        # API, web and edge images (several minutes)
   3. docker login <registry> && scripts/vps/cp.sh push-edge   # client packages pull $EDGE_REPO; records the digest
   4. scripts/vps/cp.sh cert                        # Let's Encrypt certificate for $DOMAIN

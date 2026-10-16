@@ -79,7 +79,8 @@ case "$cmd" in
     printf '  Dashboard:    '; curl -sk -o /dev/null -w '%{http_code}\n' "https://$DOMAIN/login" || true
     printf '  Agent gateway: '; curl -sk -o /dev/null -w '%{http_code}\n' "https://$DOMAIN:$(env_get AGENT_GATEWAY_PORT)/agent/v1/health" || true
     step "Certificate"
-    docker run --rm -v psacc-cp-letsencrypt:/etc/letsencrypt:ro certbot/certbot certificates 2>/dev/null | grep -E 'Domains|Expiry' || echo "  (none yet: run scripts/vps/cp.sh cert)"
+    docker run --rm -v psacc-cp-letsencrypt:/etc/letsencrypt:ro --entrypoint sh alpine/openssl -c "openssl x509 -in /etc/letsencrypt/live/$DOMAIN/fullchain.pem -noout -subject -issuer -enddate 2>/dev/null" | sed 's/^/  /' || true
+    docker run --rm -v psacc-cp-letsencrypt:/etc/letsencrypt:ro --entrypoint sh alpine/openssl -c "test -s /etc/letsencrypt/live/$DOMAIN/fullchain.pem" 2>/dev/null || echo "  (none yet: run scripts/vps/cp.sh cert)"
     ;;
   logs)
     need_env; compose logs -f --tail 200 "$@" ;;
