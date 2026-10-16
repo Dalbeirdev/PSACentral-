@@ -10,6 +10,7 @@ export * from './deployments.js';
 export * from './health.js';
 export * from './licenses.js';
 export * from './license-tokens.js';
+export * from './client-deletion.js';
 export * from './database-explorer.js';
 export * from './onboarding.js';
 export * from './permissions.js';

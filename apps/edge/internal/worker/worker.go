@@ -8,8 +8,11 @@ package worker
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -40,7 +43,9 @@ type Worker struct {
 	// License files (Module 16): the package copy and the current token the agent keeps fresh.
 	LicensePackagePath string
 	LicenseCurrentPath string
-	licenseState       string
+	// LogDir (Module 17) is the shared log volume whose files the wipe removes (outbox, license, hand-over files).
+	LogDir       string
+	licenseState string
 
 	mu          sync.Mutex
 	lastSync    time.Time
@@ -58,6 +63,9 @@ func (w *Worker) logEntry(ctx context.Context, level, msg string) {
 // credentials are present and the last test is older than TestInterval, and records the worker's
 // last-seen time. It returns the connection status afterwards.
 func (w *Worker) Tick(ctx context.Context) (string, error) {
+	if on, _ := DeletedIn(ctx, w.Pool); on {
+		return "deleted", nil // Module 17: the database was emptied on purpose; nothing runs any more
+	}
 	var id, status string
 	var have int
 	var lastTest *time.Time
@@ -84,6 +92,9 @@ func (w *Worker) Tick(ctx context.Context) (string, error) {
 	suspended, _ := w.Suspended(ctx)
 	if dec, _ := DecommissionedIn(ctx, w.Pool); dec {
 		suspended = true // Module 15: a decommissioned appliance runs no PSA work either
+	}
+	if on, _ := DeletionRequestedIn(ctx, w.Pool); on {
+		suspended = true // Module 17: nothing talks to the PSA once the administrator asked for the deletion
 	}
 	// Module 16: no PSA work without a valid (or grace-period) license token; the state change is logged once.
 	lic := w.License()
@@ -206,6 +217,17 @@ func (w *Worker) HandleRemote(ctx context.Context, r remote.Request) (remote.Res
 		}
 		w.logEntry(ctx, "warn", "Decommissioned by the provider: the management identity is retired and the Control Plane is no longer contacted. PSA connection tests and ticket synchronization have stopped; tickets, data and the local admin stay on this host until the operator removes the appliance (scripts/uninstall.sh).")
 		return remote.Result{Status: "succeeded", Code: "decommissioned", Message: "PSA work stopped; data and the local UI stay until the host operator removes the appliance."}, false
+	case "wipe-data":
+		// Module 17: the agent relays the local administrator's deletion once the Control Plane has been told
+		// (or the administrator chose to go ahead without it). The confirmation is the deployment code.
+		confirm, _ := r.Params["confirm"].(string)
+		counts, err := w.WipeAllData(ctx, confirm)
+		if err != nil {
+			return remote.Result{Status: "failed", Code: "wipe_error", Message: redact.Text(err.Error(), 300)}, false
+		}
+		b, _ := json.Marshal(counts)
+		w.Log.Warn("all data on this appliance deleted at the local administrator's request", "tables", len(counts))
+		return remote.Result{Status: "succeeded", Code: "wiped", Message: string(b)}, false
 	case "resume":
 		if err := w.setSuspended(ctx, false, ""); err != nil {
 			return remote.Result{Status: "failed", Code: "store_error", Message: redact.Text(err.Error(), 300)}, false
@@ -328,6 +350,52 @@ func DecommissionedIn(ctx context.Context, pool *pgxpool.Pool) (bool, string) {
 		return false, ""
 	}
 	return true, v
+}
+
+// DeletionRequestedIn reads the deletion flag the local admin UI sets (`service.deletion_requested`, "<RFC3339>|<user>", Module 17).
+func DeletionRequestedIn(ctx context.Context, pool *pgxpool.Pool) (bool, string) {
+	var v string
+	if err := pool.QueryRow(ctx, `SELECT value FROM app_metadata WHERE key = 'service.deletion_requested'`).Scan(&v); err != nil || v == "" {
+		return false, ""
+	}
+	return true, v
+}
+
+// DeletedIn reads the marker edge_wipe_all_data() leaves (`service.deleted`, "<RFC3339>|<code>", Module 17).
+func DeletedIn(ctx context.Context, pool *pgxpool.Pool) (bool, string) {
+	var v string
+	if err := pool.QueryRow(ctx, `SELECT value FROM app_metadata WHERE key = 'service.deleted'`).Scan(&v); err != nil || v == "" {
+		return false, ""
+	}
+	return true, v
+}
+
+// WipeAllData empties every application table through the schema owner's edge_wipe_all_data() (the
+// application role cannot delete audit rows or logs itself) and removes the files on the shared log volume
+// this process can reach: the report outbox, the license token and the hand-over files. The confirmation
+// must be this appliance's deployment code. Returns the rows deleted per table.
+func (w *Worker) WipeAllData(ctx context.Context, confirm string) (map[string]int64, error) {
+	var raw []byte
+	if err := w.Pool.QueryRow(ctx, `SELECT edge_wipe_all_data($1)::text`, confirm).Scan(&raw); err != nil {
+		return nil, err
+	}
+	counts := map[string]int64{}
+	if err := json.Unmarshal(raw, &counts); err != nil {
+		return nil, err
+	}
+	dir := w.LogDir
+	if dir == "" {
+		dir = "/var/log/psa-edge"
+	}
+	for _, p := range []string{filepath.Join(dir, "outbox"), filepath.Join(dir, "license"), filepath.Join(dir, "schema")} {
+		_ = os.RemoveAll(p)
+	}
+	if w.RemoteDir != "" {
+		_ = os.RemoveAll(filepath.Join(w.RemoteDir, "requests"))
+		_ = os.Remove(remote.OrderPath(w.RemoteDir))
+		_ = os.Remove(remote.StatusPath(w.RemoteDir))
+	}
+	return counts, nil
 }
 
 func (w *Worker) setDecommissioned(ctx context.Context, detail string) error {

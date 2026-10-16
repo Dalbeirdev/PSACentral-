@@ -15,6 +15,7 @@
   .brand small { display: block; font-weight: 500; color: var(--muted); font-size: 12px; }
   nav a, nav button { color: var(--ink); text-decoration: none; font-weight: 550; margin-left: 14px; font-size: 14px; background: none; border: 0; cursor: pointer; padding: 0; font-family: inherit; }
   nav a:hover, nav button:hover { color: var(--blue); }
+  nav a.nav-danger { color: #b42318; }
   main { max-width: 1040px; margin: 0 auto; padding: 28px 20px 48px; }
   h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.01em; }
   .lead { color: var(--muted); margin: 0 0 22px; }
@@ -59,7 +60,7 @@
 <header><div class="bar">
   <div class="brand"><span class="logo" aria-hidden="true"></span><span>PSA Edge appliance<small>{{.Cfg.Deployment.Code}} · {{.Cfg.Client.DisplayName}} · local administration</small></span></div>
   {{if .Session}}<nav aria-label="Appliance">
-    <a href="/">Status</a><a href="/tickets">Tickets</a><a href="/sync">Synchronization</a><a href="/credentials">PSA credentials</a><a href="/removal">Removal</a>
+    <a href="/">Status</a><a href="/tickets">Tickets</a><a href="/sync">Synchronization</a><a href="/credentials">PSA credentials</a><a href="/removal">Removal</a><a href="/deletion" class="nav-danger">Delete appliance</a>
     <form method="post" action="/logout" style="display:inline"><input type="hidden" name="csrf" value="{{.Session.CSRF}}"><button type="submit">Sign out {{.Session.Username}}</button></form>
   </nav>{{end}}
 </div></header>

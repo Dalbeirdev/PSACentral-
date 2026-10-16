@@ -14,11 +14,13 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"psacc.local/edge/internal/agent"
 	"psacc.local/edge/internal/config"
 	"psacc.local/edge/internal/inventory"
 	"psacc.local/edge/internal/license"
@@ -54,6 +56,15 @@ type Server struct {
 	LicensePackagePath string
 	LicenseCurrentPath string
 	RemoteDir          string
+	// DeletionDir (Module 17): the local administrator's deletion request and the agent's progress, on the shared volume.
+	DeletionDir string
+}
+
+func (s *Server) deletionDir() string {
+	if s.DeletionDir != "" {
+		return s.DeletionDir
+	}
+	return "/var/log/psa-edge/deletion"
 }
 
 func (s *Server) Handler() (http.Handler, error) {
@@ -112,6 +123,9 @@ func (s *Server) Handler() (http.Handler, error) {
 	mux.HandleFunc("POST /tickets/{id}", s.page(s.ticketUpdate))
 	mux.HandleFunc("GET /sync", s.page(s.syncPage))
 	mux.HandleFunc("GET /removal", s.page(s.removalPage))
+	mux.HandleFunc("GET /deletion", s.deletionPage)
+	mux.HandleFunc("POST /deletion", s.page(s.deletionSubmit))
+	mux.HandleFunc("POST /deletion/local", s.page(s.deletionLocal))
 	mux.HandleFunc("POST /sync/run", s.page(s.syncRequest))
 	mux.HandleFunc("GET /api/status", s.page(s.statusJSON))
 	return s.guard(mux), nil
@@ -136,6 +150,11 @@ func (s *Server) guard(next http.Handler) http.Handler {
 			return
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, 64<<10)
+		// Module 17: once the local administrator asked for the deletion, the appliance shows only its progress.
+		if r.URL.Path != "/deletion" && r.URL.Path != "/deletion/local" && !probe && agent.ReadDeletionRequest(s.deletionDir()) != nil {
+			http.Redirect(w, r, "/deletion", http.StatusSeeOther)
+			return
+		}
 		if r.Method == http.MethodPost {
 			if o := r.Header.Get("Origin"); o != "" && o != "null" && !strings.HasSuffix(o, "://"+r.Host) {
 				http.Error(w, "Cross-origin request refused.", http.StatusForbidden)
@@ -575,7 +594,9 @@ type Status struct {
 	Remote map[string]any `json:"remote"`
 	// Lifecycle: provider suspension (Module 14) as recorded by the worker; License: the identifier from the package.
 	Lifecycle map[string]any `json:"lifecycle"`
-	License   map[string]any `json:"license"`
+	// Deletion (Module 17): the local administrator's deletion in progress or finished, nil otherwise.
+	Deletion *agent.DeletionStatus `json:"deletion,omitempty"`
+	License  map[string]any        `json:"license"`
 	// LicenseCheck: the appliance's verification of its license token (Module 16); PSA work stops when not allowed.
 	LicenseCheck license.Status `json:"licenseCheck"`
 }
@@ -588,6 +609,7 @@ func (s *Server) collectStatus(ctx context.Context) Status {
 		Enrollment:   agentStatus(),
 		Remote:       s.remoteStatus(),
 		Lifecycle:    s.lifecycleStatus(ctx),
+		Deletion:     agent.ReadDeletionStatus(s.deletionDir()),
 		License:      s.licenseInfo(),
 		LicenseCheck: s.licenseVerification(),
 	}
@@ -787,4 +809,140 @@ func Serve(ctx context.Context, addr string, h http.Handler, log *slog.Logger) e
 		return err
 	}
 	return nil
+}
+
+// ---------------------------------------------------------------------------
+// Module 17: "Delete all data and deregister" — the client ends the service from the appliance.
+// ---------------------------------------------------------------------------
+
+type deletionView struct {
+	Code        string
+	Project     string
+	Requested   bool
+	Status      *agent.DeletionStatus
+	LocalOnly   bool
+	PhaseLabel  string
+	Done        bool
+	Refused     bool
+	InProgress  bool
+	Notified    bool
+	AgentState  string
+	ControlRows []string
+	// AuditEventID: the one record the Control Plane keeps (templates print values, not pointers).
+	AuditEventID string
+}
+
+var deletionPhaseLabels = map[string]string{
+	"requested":     "Deletion requested",
+	"deregistering": "Deregistering from the Control Plane",
+	"deregistered":  "Deregistered; deleting local data",
+	"wiping":        "Deleting local data",
+	"wiped":         "All data deleted",
+	"refused":       "The Control Plane refused the deregistration",
+}
+
+func (s *Server) deletionView() deletionView {
+	v := deletionView{Code: s.Cfg.Deployment.Code, Project: "psacc-" + strings.ToLower(s.Cfg.Deployment.Code)}
+	st, _ := agentStatus()["state"].(string)
+	v.AgentState = st
+	if req := agent.ReadDeletionRequest(s.deletionDir()); req != nil {
+		v.Requested, v.LocalOnly = true, req.LocalOnly
+		v.Status = agent.ReadDeletionStatus(s.deletionDir())
+		if v.Status == nil {
+			v.PhaseLabel = "Deletion requested; waiting for the agent"
+			v.InProgress = true
+			return v
+		}
+		v.PhaseLabel = deletionPhaseLabels[v.Status.Phase]
+		v.Done = v.Status.Phase == "wiped"
+		v.Refused = v.Status.Phase == "refused" && !req.LocalOnly
+		v.InProgress = !v.Done && !v.Refused
+		v.Notified = v.Status.ControlPlaneNotified
+		if v.Status.AuditEventID != nil {
+			v.AuditEventID = *v.Status.AuditEventID
+		}
+		for k, n := range v.Status.ControlPlaneDeleted {
+			v.ControlRows = append(v.ControlRows, fmt.Sprintf("%s: %d", k, n))
+		}
+		sort.Strings(v.ControlRows)
+	}
+	return v
+}
+
+// deletionPage: the confirmation form while nothing was requested (signed in); the progress afterwards,
+// readable without a session, because the local admin accounts are deleted with everything else.
+func (s *Server) deletionPage(w http.ResponseWriter, r *http.Request) {
+	if agent.ReadDeletionRequest(s.deletionDir()) == nil {
+		s.page(func(w http.ResponseWriter, r *http.Request, se *session) {
+			s.render(w, http.StatusOK, "deletion.html", viewData{Title: "Delete all data", Session: se, Fields: map[string]string{}, Data: s.deletionView()})
+		})(w, r)
+		return
+	}
+	s.render(w, http.StatusOK, "deletion.html", viewData{Title: "Deletion", Session: s.currentSession(r), Fields: map[string]string{}, Data: s.deletionView()})
+}
+
+// confirmDeletion checks the typed deployment code, the administrator's password and the acknowledgement.
+func (s *Server) confirmDeletion(r *http.Request, se *session) string {
+	if !strings.EqualFold(strings.TrimSpace(r.FormValue("confirm")), s.Cfg.Deployment.Code) {
+		return "Type the deployment ID " + s.Cfg.Deployment.Code + " exactly to confirm."
+	}
+	if r.FormValue("acknowledge") != "on" {
+		return "Confirm that you understand what is deleted."
+	}
+	var hash string
+	if err := s.Pool.QueryRow(r.Context(), `SELECT password_hash FROM local_admin_users WHERE id = $1`, se.UserID).Scan(&hash); err != nil || !VerifyPassword(hash, r.FormValue("password")) {
+		return "The password is not correct."
+	}
+	return ""
+}
+
+func (s *Server) deletionSubmit(w http.ResponseWriter, r *http.Request, se *session) {
+	ctx := r.Context()
+	if agent.ReadDeletionRequest(s.deletionDir()) != nil {
+		http.Redirect(w, r, "/deletion", http.StatusSeeOther)
+		return
+	}
+	reason := strings.TrimSpace(r.FormValue("reason"))
+	if len(reason) > 500 {
+		reason = reason[:500]
+	}
+	if msg := s.confirmDeletion(r, se); msg != "" {
+		s.audit(ctx, "local_admin", se.Username, "local_admin.deletion_requested", s.Cfg.Deployment.Code, "failure", map[string]any{"reason": "confirmation"})
+		s.render(w, http.StatusBadRequest, "deletion.html", viewData{Title: "Delete all data", Session: se, Error: msg, Fields: map[string]string{"reason": reason}, Data: s.deletionView()})
+		return
+	}
+	now := time.Now().UTC()
+	if _, err := s.Pool.Exec(ctx, `INSERT INTO app_metadata (key, value) VALUES ('service.deletion_requested', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, now.Format(time.RFC3339)+"|"+se.Username); err != nil {
+		http.Error(w, "The request could not be recorded.", http.StatusInternalServerError)
+		return
+	}
+	s.audit(ctx, "local_admin", se.Username, "local_admin.deletion_requested", s.Cfg.Deployment.Code, "success", map[string]any{"reason": reason})
+	if err := agent.WriteDeletionRequest(s.deletionDir(), agent.DeletionRequest{RequestedAt: now, RequestedBy: se.Username, Reason: reason}); err != nil {
+		http.Error(w, "The request could not be handed to the agent: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.Log.Warn("deletion of all data requested by the local administrator", "user", se.Username)
+	http.Redirect(w, r, "/deletion", http.StatusSeeOther)
+}
+
+// deletionLocal: after a refusal (or without an identity) the administrator may delete the local data anyway.
+func (s *Server) deletionLocal(w http.ResponseWriter, r *http.Request, se *session) {
+	ctx := r.Context()
+	req := agent.ReadDeletionRequest(s.deletionDir())
+	st := agent.ReadDeletionStatus(s.deletionDir())
+	if req == nil || st == nil || st.Phase != "refused" {
+		http.Redirect(w, r, "/deletion", http.StatusSeeOther)
+		return
+	}
+	if msg := s.confirmDeletion(r, se); msg != "" {
+		s.render(w, http.StatusBadRequest, "deletion.html", viewData{Title: "Deletion", Session: se, Error: msg, Fields: map[string]string{}, Data: s.deletionView()})
+		return
+	}
+	req.LocalOnly = true
+	if err := agent.WriteDeletionRequest(s.deletionDir(), *req); err != nil {
+		http.Error(w, "The request could not be updated: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.audit(ctx, "local_admin", se.Username, "local_admin.deletion_local_only", s.Cfg.Deployment.Code, "success", map[string]any{"refusal": st.LastError})
+	http.Redirect(w, r, "/deletion", http.StatusSeeOther)
 }

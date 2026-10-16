@@ -13,6 +13,7 @@ import { DatabaseService } from '../../database/database.service.js';
 import { HealthService } from '../health/health.service.js';
 import { CommandsService } from '../deployments/commands.service.js';
 import { LicenseTokensService } from '../deployments/license-tokens.service.js';
+import { ClientDeletionService } from './client-deletion.service.js';
 import { CsrRejected, PkiService } from './pki.service.js';
 
 /** Single-use enrollment: token + identity + CSR. No client certificate yet. */
@@ -67,6 +68,7 @@ const MESSAGES: Record<string, [number, string]> = {
  *   POST /agent/v1/heartbeat  mTLS
  *   POST /agent/v1/renew      mTLS + CSR → renewed certificate
  *   POST /agent/v1/reports    mTLS; a batch of allow-listed reports (strict schemas), evaluated on receipt
+ *   POST /agent/v1/delete     mTLS; the client deletes the deployment from the appliance (Module 17)
  *   GET  /agent/v1/health     liveness of the gateway itself
  * Every certificate is also checked against the database on each request (revocation is immediate).
  */
@@ -84,6 +86,7 @@ export class AgentGateway implements OnApplicationBootstrap, OnApplicationShutdo
     @Inject(HealthService) private readonly health: HealthService,
     @Inject(CommandsService) private readonly commands: CommandsService,
     @Inject(LicenseTokensService) private readonly licenseTokens: LicenseTokensService,
+    @Inject(ClientDeletionService) private readonly deletion: ClientDeletionService,
   ) {}
 
   /** Starts in the background and retries, so the API never fails to boot because the gateway cannot start yet (e.g. migrations pending). */
@@ -191,6 +194,13 @@ export class AgentGateway implements OnApplicationBootstrap, OnApplicationShutdo
         return this.send(res, 400, { error: 'invalid-body', message: 'The request body must be JSON (at most 256 KB).' });
       }
       if (route === 'POST /agent/v1/enroll') return await this.enroll(input, ip, res);
+      if (route === 'POST /agent/v1/delete') {
+        // Module 17: the client's local administrator deletes the deployment from the appliance (mTLS identity).
+        const fp = this.clientFingerprint(req);
+        if (!fp) return this.fail(res, 'certificate-required');
+        const out = await this.deletion.deleteFromAppliance(fp, input, ip);
+        return out.ok ? this.send(res, 200, out.result) : this.send(res, out.status, { error: out.code, message: out.message });
+      }
       if (route === 'POST /agent/v1/heartbeat' || route === 'POST /agent/v1/renew' || route === 'POST /agent/v1/reports' || route === 'POST /agent/v1/command-results') {
         const fp = this.clientFingerprint(req);
         if (!fp) return this.fail(res, 'certificate-required');

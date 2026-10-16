@@ -27,6 +27,10 @@ powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1</pre>
 powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1 -Wipe -Confirm {{.Code}}</pre>
     <p class="hint">Afterwards delete the package folder; the PSA Edge image can be removed with <span class="mono">docker image rm</span> once no other deployment on this host uses it.</p>
   </section>
+  <section class="card" aria-labelledby="self-h">
+    <h2 id="self-h">Ending the service yourself</h2>
+    <p>The client can end the service from this appliance without the provider: <a href="/deletion">Delete all data and deregister</a> tells the Control Plane over this appliance's own identity to delete every record it holds about this deployment (only an audit event remains there), then deletes the database, logs, credentials and the machine identity here. The Docker resources are removed afterwards with the wipe command above, which then needs no <span class="mono">--force</span>.</p>
+  </section>
   <section class="card" aria-labelledby="keep-h">
     <h2 id="keep-h">What the Control Plane keeps</h2>
     <p>Only metadata: the deployment record, its identity history and the audit trail. Reports, heartbeats, the table inventory and the command history are purged after the provider's retention period. No ticket, credential or database row ever left this host.</p>

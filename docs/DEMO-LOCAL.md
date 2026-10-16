@@ -65,6 +65,10 @@ needs real credentials, so for a demo without them the appliance shows *not conf
 - Health: live findings from the appliance's reports; Database: the appliance's table inventory.
 - Operations: signed remote commands (refresh, PSA test, sync, restart, certificate rotation).
 - Licenses, suspension (Overview → *Suspend deployment*) and the final decommissioning page.
+- The client's own exit: on the appliance, *Delete appliance* (typed ID + password) deregisters it and wipes
+  everything there; the dashboard keeps only the audit event (*Activity & audit logs* → *Deleted by clients*).
+  Afterwards `psa-edge.cmd wipe DEP-00030` removes the containers without `--force`. Reinstall needs a new
+  deployment (identities are never reused).
 
 Screenshots from a rehearsal of this guide on this workstation (first-run page, dashboard overview and
 health of the demo appliance) are in `docs/reports/demo-local/`.

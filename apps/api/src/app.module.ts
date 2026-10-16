@@ -27,6 +27,7 @@ import { LicensingKeyController, RetentionController } from './modules/deploymen
 import { RetentionService } from './modules/deployments/retention.service.js';
 import { LicenseTokensService } from './modules/deployments/license-tokens.service.js';
 import { AgentGateway } from './modules/agents/agent-gateway.js';
+import { ClientDeletionService } from './modules/agents/client-deletion.service.js';
 import { HealthController } from './modules/health/health.controller.js';
 import { HealthService } from './modules/health/health.service.js';
 import { PkiService } from './modules/agents/pki.service.js';
@@ -91,6 +92,7 @@ export class AppModule {
         HealthService,
         DatabaseExplorerService,
         AgentGateway,
+        ClientDeletionService,
         DeploymentsService,
         CommandsService,
         LicensesService,

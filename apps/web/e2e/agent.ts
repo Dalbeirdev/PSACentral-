@@ -11,7 +11,7 @@ import { E2E_BASE_URL, E2E_GATEWAY_PORT } from './env';
 x509.cryptoProvider.set(webcrypto as unknown as Crypto);
 const ALG = { name: 'ECDSA', namedCurve: 'P-256', hash: 'SHA-256' } as const;
 
-export interface E2EAgent { id: string; code: string; serial: string; keyPem: string; certPem: string; ca: string }
+export interface E2EAgent { id: string; code: string; installationId: string; serial: string; keyPem: string; certPem: string; ca: string }
 
 function call(path: string, body: unknown, ca: string, agent?: { keyPem: string; certPem: string }) {
   return new Promise<{ status: number; body: Record<string, unknown> }>((resolve, reject) => {
@@ -48,7 +48,7 @@ export async function enrolledDeployment(page: Page, clientQuery = 'Lumen'): Pro
   const keyPem = `-----BEGIN PRIVATE KEY-----\n${der.toString('base64').replace(/(.{64})/g, '$1\n')}\n-----END PRIVATE KEY-----\n`;
   const res = await call('/agent/v1/enroll', { token: en.token, deploymentId: en.deploymentId, installationId: en.installationId, csr: csr.toString('pem'), agentVersion: '0.1.0' }, en.caCertificate);
   expect(res.status).toBe(201);
-  return { id: dep.id, code: dep.code, serial: res.body.serial as string, keyPem, certPem: res.body.certificate as string, ca: en.caCertificate };
+  return { id: dep.id, code: dep.code, installationId: en.installationId as string, serial: res.body.serial as string, keyPem, certPem: res.body.certificate as string, ca: en.caCertificate };
 }
 
 export function reports(over: Partial<Record<string, Record<string, unknown>>> = {}) {
@@ -73,6 +73,11 @@ export async function sendReports(a: E2EAgent, body: unknown) {
 }
 
 /** Module 13: a heartbeat returns open signed commands; results are answered over the same mTLS channel. */
+/** Module 17: the client deletes the deployment from the appliance (the local administrator confirmed there). */
+export async function deleteFromAppliance(a: E2EAgent, requestedBy = 'localadmin', reason = 'Contract ended') {
+  return call('/agent/v1/delete', { installationId: a.installationId, requestedBy, reason, requestedAt: new Date().toISOString() }, a.ca, a);
+}
+
 export async function heartbeat(a: E2EAgent) {
   return call('/agent/v1/heartbeat', { agentVersion: '0.1.0', observedAt: new Date().toISOString() }, a.ca, a);
 }

@@ -289,7 +289,7 @@ ${logs.out}`).toBe(0);
       const h = (await ops.get(`/deployments/${i.id}/health`)).body;
       expect(h).toMatchObject({ healthState: 'healthy', healthReason: null, lifecycleState: 'verified' });
       expect(Object.keys(h.latest).sort()).toEqual(['backup', 'certificates_security', 'containers', 'database', 'host_resources', 'psa_integration_status', 'synchronization', 'ticket_processing_metrics', 'versions']);
-      expect(h.latest.database.payload).toMatchObject({ available: true, schemaVersion: '0005', migrationsApplied: 5 });
+      expect(h.latest.database.payload).toMatchObject({ available: true, schemaVersion: '0006', migrationsApplied: 6 });
       expect(h.latest.database.payload.tables).toHaveLength(14);
       expect(h.latest.host_resources.payload.cpuPercent).not.toBeNull();
       expect(h.latest.host_resources.payload.diskTotalBytes).toBeGreaterThan(0);
@@ -301,7 +301,7 @@ ${logs.out}`).toBe(0);
       // Database Explorer: the schema snapshot (columns, keys, indexes) arrives from the real catalog.
       await waitFor(async () => (await ops.get(`/deployments/${i.id}/database`)).body.inspection?.pendingTables === 0, 120_000, `${i.code} schema details`);
       const db = (await ops.get(`/deployments/${i.id}/database`)).body;
-      expect(db.database).toMatchObject({ databaseName: 'psa_edge', available: true, schemaVersion: '0005', tableCount: 14 });
+      expect(db.database).toMatchObject({ databaseName: 'psa_edge', available: true, schemaVersion: '0006', tableCount: 14 });
       expect(db.inspection.detailedTables).toBe(14);
       expect(db.tables.map((t: { name: string }) => t.name)).toContain('helpdesk_tickets');
       const t = (await ops.get(`/deployments/${i.id}/database/tables/public/helpdesk_tickets`)).body;
@@ -325,7 +325,7 @@ ${logs.out}`).toBe(0);
       expect(tables).toEqual(['app_metadata', 'audit_events', 'backup_runs', 'credential_store', 'helpdesk_tickets', 'integration_logs', 'local_admin_sessions',
         'local_admin_users', 'psa_connection_tests', 'psa_connections', 'schema_migrations', 'service_configurations', 'sync_runs', 'ticket_events']);
       expect((await ownerSql(i, `SELECT value FROM app_metadata WHERE key = 'deployment.code'`)).out).toBe(i.code);
-      expect((await ownerSql(i, `SELECT version || ':' || name FROM schema_migrations ORDER BY version`)).out).toBe('0001:initial\n0002:health_status\n0003:psa_connection_tests\n0004:ticket_sync\n0005:remote_commands');
+      expect((await ownerSql(i, `SELECT version || ':' || name FROM schema_migrations ORDER BY version`)).out).toBe('0001:initial\n0002:health_status\n0003:psa_connection_tests\n0004:ticket_sync\n0005:remote_commands\n0006:client_deletion');
       expect((await ownerSql(i, `SELECT provider || ':' || status FROM psa_connections`)).out).toBe(`${i.provider}:not_configured`);
       expect((await ownerSql(i, `SELECT string_agg(service_key, ',' ORDER BY service_key) FROM service_configurations WHERE enabled`)).out.split(',')).toEqual(i.services);
       // The client's non-secret settings for each service travelled in the package and are stored on the appliance (Module 4).
@@ -334,7 +334,7 @@ ${logs.out}`).toBe(0);
       if (i.services.includes('help_desk')) expect(stored.help_desk).toEqual({ defaultPriority: 'high', supportHours: '24x7' });
       const again = await dc(i, 'run --rm -T edge-migrate', 120_000);
       expect(again.code, again.err).toBe(0);
-      expect(JSON.parse(again.out.slice(again.out.indexOf('{\n')))).toMatchObject({ applied: null, schemaVersion: '0005', verified: true });
+      expect(JSON.parse(again.out.slice(again.out.indexOf('{\n')))).toMatchObject({ applied: null, schemaVersion: '0006', verified: true });
       expect((await ownerSql(i, `SELECT count(*) FROM audit_events WHERE action = 'appliance.migrated'`)).out).toBe('2');
     }
     expect(inst[0]!.provider).not.toBe(inst[1]!.provider);
@@ -346,7 +346,7 @@ ${logs.out}`).toBe(0);
     expect(denied.code).not.toBe(0);
     expect(denied.err).toMatch(/permission denied for table helpdesk_tickets/);
     const inv = await roleSql(i, 'psa_edge_inspector', 'inspector_db_password', `SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relkind = 'r' AND pg_total_relation_size(c.oid) > 0; SELECT schema_version FROM edge_schema_status()`);
-    expect(inv.out.split('\n')).toEqual(['14', '0005']);
+    expect(inv.out.split('\n')).toEqual(['14', '0006']);
     for (const sql of ["UPDATE audit_events SET actor = 'x'", 'DELETE FROM integration_logs', 'DROP TABLE helpdesk_tickets', "INSERT INTO backup_runs (status) VALUES ('running')"]) {
       const r = await roleSql(i, 'psa_edge_app', 'app_db_password', sql);
       expect(r.code, sql).not.toBe(0);
@@ -891,5 +891,88 @@ ${events}
     expect((await ops.get(`/deployments/${a.id}`)).status).toBe(404);
     const activity = (await ops.get(`/clients/${before.client.id}/activity?pageSize=100`)).body.items.map((e: { action: string; targetId: string }) => `${e.action}@${e.targetId}`);
     for (const action of ['agent.enrolled', 'deployment.decommissioned', 'deployment.removed']) expect(activity).toContain(`${action}@${a.id}`);
+  }, 900_000);
+
+  it('client-initiated deletion (Module 17): the local administrator deletes everything from the appliance; the Control Plane keeps only the audit event; the host wipe needs no --force', async () => {
+    const b = inst[1]!;
+    const base = `http://127.0.0.1:${b.port}`;
+    const pw = `edge-${b.code}-local-admin-pass`;
+    // Appliance B lost its identity in the revocation scenario (certificate revoked, state file wiped, the package's
+    // token already used). The Module 15 runbook applies first: re-enroll with a new package — the package files are
+    // refreshed in place, the agent state cleared, and the stack restarted so every service reads the new config.
+    expect((await agentStatus(b)).state).toBe('failed');
+    const pkg2 = (await ops.post(`/deployments/${b.id}/packages`, { tokenValidityHours: 1 })).body.currentPackage;
+    const file2 = join(winTmp, pkg2.fileName);
+    writeFileSync(file2, await download(ops, `/deployments/${b.id}/packages/${pkg2.id}/download`));
+    // The package files are installed read-only (the install script tightens their modes): replace them, do not overwrite in place.
+    const refresh = await sh(`mkdir -p ${work}/${b.project}-re && cd ${work}/${b.project}-re && unzip -q "${toUnix(file2)}" && for f in enrollment/enrollment.json config/edge.json config/license.json; do cp -f ${b.project}/$f ${b.dir}/$f && chmod 444 ${b.dir}/$f; done`); // world-readable like the installer leaves them (the containers run as another uid)
+    expect(refresh.code, refresh.err || refresh.out).toBe(0);
+    expect((await dc(b, 'stop edge-agent')).code).toBe(0);
+    expect((await sh(`docker run --rm -v ${b.project}_agent-state:/s postgres:17-alpine sh -c 'rm -f /s/*'`)).code).toBe(0);
+    // A file bind mount follows the inode it was created with: the replaced files are only seen by recreated containers
+    // (a plain restart would keep serving the old token). Migrate runs again and records the new installation id.
+    expect((await dc(b, 'up -d --force-recreate --wait --wait-timeout 120', 240_000)).code).toBe(0);
+    try {
+      await waitFor(async () => (await agentStatus(b)).state === 'enrolled', 90_000, `${b.code} re-enrolled with the new package`);
+    } catch (err) {
+      throw new Error(`${(err as Error).message}; agent status ${JSON.stringify(await agentStatus(b))}`);
+    }
+    await waitFor(async () => ['enrolled', 'verified'].includes((await detail(b)).lifecycleState as string), 90_000, `${b.code} enrolled on the Control Plane`);
+    const before = await detail(b);
+    expect((await http(b, `-X POST --data-urlencode username=localadmin --data-urlencode password=${pw} ${base}/login`)).status).toBe(303);
+    const page = await http(b, `${base}/deletion`);
+    expect(page.status).toBe(200);
+    expect(page.body).toContain('data-testid="deletion-form"');
+    const csrf = /name="csrf" value="([^"]+)"/.exec(page.body)![1]!;
+    // A wrong deployment ID, a wrong password or a missing acknowledgement change nothing.
+    expect((await http(b, `-X POST --data-urlencode csrf=${csrf} --data-urlencode confirm=DEP-00000 --data-urlencode password=${pw} --data-urlencode acknowledge=on ${base}/deletion`)).status).toBe(400);
+    expect((await http(b, `-X POST --data-urlencode csrf=${csrf} --data-urlencode confirm=${b.code} --data-urlencode password=wrong-${pw} --data-urlencode acknowledge=on ${base}/deletion`)).status).toBe(400);
+    expect((await http(b, `-X POST --data-urlencode csrf=${csrf} --data-urlencode confirm=${b.code} --data-urlencode password=${pw} ${base}/deletion`)).status).toBe(400);
+    expect((await detail(b)).lifecycleState).toBe(before.lifecycleState);
+    expect((await agentStatus(b)).deletion).toBeUndefined();
+    // The real request: PSA work stops, every other page is locked to the progress page.
+    expect((await http(b, `-X POST --data-urlencode csrf=${csrf} --data-urlencode confirm=${b.code} --data-urlencode password=${pw} --data-urlencode acknowledge=on --data-urlencode "reason=Moving to another provider" ${base}/deletion`)).status).toBe(303);
+    expect((await http(b, `${base}/tickets`)).status).toBe(303);
+    expect((await ownerSql(b, `SELECT count(*) FROM app_metadata WHERE key = 'service.deletion_requested'`)).out).toBe('1');
+    // Control Plane: the record is gone; the audit event on the client says who, from where, and what was deleted.
+    try {
+      await waitFor(async () => (await ops.get(`/deployments/${b.id}`)).status === 404, 90_000, `${b.code} deleted on the Control Plane`);
+    } catch (err) {
+      throw new Error(`${(err as Error).message}; agent status ${JSON.stringify((await agentStatus(b)).deletion ?? null)}; agent log: ${(await dc(b, 'logs --tail 30 edge-agent', 60_000)).out.slice(-3000)}`);
+    }
+    const activity = (await ops.get(`/clients/${before.client.id}/activity?pageSize=100`)).body.items as { id: string; action: string; targetId: string; actorType: string; metadata: Record<string, unknown> }[];
+    const ev = activity.find((e) => e.action === 'deployment.deleted_by_client' && e.targetId === b.id)!;
+    expect(ev, JSON.stringify(activity.map((e) => e.action))).toBeTruthy();
+    expect(ev.actorType).toBe('agent');
+    expect(ev.metadata).toMatchObject({ code: b.code, requestedBy: 'localadmin', reason: 'Moving to another provider', installationId: before.installationId });
+    expect((ev.metadata.deleted as Record<string, number>).deployments).toBe(1);
+    expect(activity.some((e) => e.action === 'agent.enrolled' && e.targetId === b.id)).toBe(true); // the trail before it stays
+    // Appliance: the agent finishes with no identity; the database holds nothing but the marker; the shared files are gone.
+    await waitFor(async () => (await agentStatus(b)).state === 'deleted', 180_000, `${b.code} agent finished the deletion`);
+    const st = await agentStatus(b);
+    expect(st.deletion).toMatchObject({ phase: 'wiped', controlPlaneNotified: true, requestedBy: 'localadmin', auditEventId: ev.id });
+    expect(st.deletion.controlPlaneDeleted.deployments).toBe(1);
+    expect(st.deletion.deleted.helpdesk_tickets).toBeGreaterThanOrEqual(0);
+    expect(JSON.stringify(st)).not.toContain('psacc-lic.v1.');
+    for (const table of ['helpdesk_tickets', 'ticket_events', 'credential_store', 'psa_connections', 'local_admin_users', 'local_admin_sessions', 'audit_events', 'integration_logs', 'sync_runs']) {
+      expect((await ownerSql(b, `SELECT count(*) FROM ${table}`)).out, table).toBe('0');
+    }
+    expect((await ownerSql(b, `SELECT count(*) FROM app_metadata`)).out).toBe('1');
+    expect((await ownerSql(b, `SELECT value FROM app_metadata WHERE key = 'service.deleted'`)).out).toContain(`|${b.code}`);
+    expect((await sh(`docker run --rm -v ${b.project}_agent-state:/s:ro postgres:17-alpine sh -c 'ls -1 /s'`)).out.trim()).toBe('state.json');
+    expect((await sh(`docker run --rm -v ${b.project}_edge-logs:/l:ro postgres:17-alpine sh -c 'ls -1 /l'`)).out).not.toMatch(/outbox|license/);
+    // The final page is readable without a session and shows the one command left; no sign-in or setup is possible any more.
+    const done = await http(b, `${base}/deletion`);
+    expect(done.status).toBe(200);
+    expect(done.body).toContain('data-testid="deletion-done"');
+    expect(done.body).toContain(`--wipe --confirm ${b.code}`);
+    expect((await http(b, `${base}/setup`)).status).toBe(303);
+    expect((await http(b, `${base}/login`)).status).toBe(303);
+    // Host side: the wipe needs no --force now (the agent reports 'deleted'); afterwards nothing of the project remains.
+    const wipe = await sh(`cd ${b.dir} && scripts/uninstall.sh --wipe --confirm ${b.code}`, 300_000);
+    expect(wipe.code, wipe.err || wipe.out).toBe(0);
+    expect(wipe.out).toContain('Removed: no container, network, volume or secret');
+    expect((await sh(`docker ps -a --format '{{ .Names }}' | grep -c '^${b.project}-' || true`)).out.trim()).toBe('0');
+    expect((await sh(`docker volume ls -q | grep -c '^${b.project}_' || true`)).out.trim()).toBe('0');
   }, 900_000);
 });

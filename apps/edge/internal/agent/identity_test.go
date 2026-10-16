@@ -37,6 +37,8 @@ type fakeGateway struct {
 	heartbeats atomic.Int32
 	enrolls    atomic.Int32
 	reports    atomic.Int32
+	deletes    atomic.Int32
+	lastDelete atomic.Value // map[string]string of the last /delete body (Module 17)
 	lastBatch  atomic.Value // []byte of the last /reports body
 }
 
@@ -90,6 +92,22 @@ func (g *fakeGateway) handle(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewDecoder(r.Body).Decode(&in)
 	w.Header().Set("content-type", "application/json")
 	switch r.URL.Path {
+	case "/agent/v1/delete":
+		// Module 17: the client deletes the deployment from the appliance; mTLS identity required.
+		if len(r.TLS.PeerCertificates) == 0 {
+			w.WriteHeader(401)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "certificate-required"})
+			return
+		}
+		g.deletes.Add(1)
+		g.lastDelete.Store(in)
+		if code, _ := g.refuse.Load().(string); code != "" {
+			w.WriteHeader(403)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": code, "message": "refused"})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"status": "deleted", "deploymentCode": "DEP-00042", "deletedAt": time.Now().UTC().Format(time.RFC3339),
+			"auditEventId": "99999999-9999-4999-8999-999999999999", "deleted": map[string]int{"deployments": 1, "reports": 7, "certificates": 1}})
 	case "/agent/v1/enroll":
 		g.enrolls.Add(1)
 		if code, _ := g.refuse.Load().(string); code != "" {

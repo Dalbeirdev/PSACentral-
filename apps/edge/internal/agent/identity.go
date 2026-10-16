@@ -51,9 +51,12 @@ type State struct {
 	// worker still has to acknowledge (consumed once answered).
 	DecommissionedAt   *time.Time `json:"decommissionedAt,omitempty"`
 	DecommissionNotice string     `json:"decommissionNotice,omitempty"`
-	CommandKeyID       string     `json:"commandKeyId,omitempty"`
-	CommandPublicKey   string     `json:"commandPublicKey,omitempty"`
-	ExecutedCommands   []string   `json:"executedCommands,omitempty"`
+	// Deletion (Module 17): the wipe hand-over the worker still has to answer, and when the identity was deleted.
+	DeletionWipeRequest string     `json:"deletionWipeRequest,omitempty"`
+	DeletedAt           *time.Time `json:"deletedAt,omitempty"`
+	CommandKeyID        string     `json:"commandKeyId,omitempty"`
+	CommandPublicKey    string     `json:"commandPublicKey,omitempty"`
+	ExecutedCommands    []string   `json:"executedCommands,omitempty"`
 }
 
 // GatewayError is a refusal from the agent gateway (error code + message).

@@ -89,7 +89,9 @@ else
 fi
 
 step "Starting the appliance"
-"${COMPOSE[@]}" up -d
+# --force-recreate: a file bind mount follows the inode it was created with, so a refreshed package (new
+# enrollment, config or license file over an existing installation) is only seen by recreated containers.
+"${COMPOSE[@]}" up -d --force-recreate --remove-orphans
 
 PORT=$(grep -E '^EDGE_LOCAL_ADMIN_PORT=' .env | cut -d= -f2 || true)
 VERIFY=scripts/verify.sh

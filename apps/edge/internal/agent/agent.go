@@ -42,10 +42,12 @@ type Agent struct {
 	// License files (Module 16): the package copy (read-only mount) and the current token kept fresh on the shared volume.
 	LicensePackagePath string
 	LicenseCurrentPath string
-	Pool               *pgxpool.Pool
-	Version            string
-	Log                *slog.Logger
-	prevCPU            cpuSample
+	// DeletionDirPath (Module 17): the shared directory of the local administrator's deletion request and the agent's progress.
+	DeletionDirPath string
+	Pool            *pgxpool.Pool
+	Version         string
+	Log             *slog.Logger
+	prevCPU         cpuSample
 	// lastInventory is the database inventory of the latest collection (drives schema snapshots).
 	lastInventory inventory.Database
 	// restart is set by a restart_service command addressed to the agent itself.
@@ -153,6 +155,9 @@ type EnrollmentStatus struct {
 	LastReportAt        *time.Time `json:"lastReportAt,omitempty"`
 	BufferedReports     int        `json:"bufferedReports"`
 	DecommissionedAt    *time.Time `json:"decommissionedAt,omitempty"`
+	// Deletion (Module 17): when the local administrator's deletion finished on this appliance, and its progress.
+	DeletedAt *time.Time      `json:"deletedAt,omitempty"`
+	Deletion  *DeletionStatus `json:"deletion,omitempty"`
 	// Commands: remote command capability (pinned key, queued results, staged upgrade); never secrets.
 	Commands map[string]any `json:"commands,omitempty"`
 	// License: this appliance's verification of its license token (Module 16).
@@ -162,7 +167,8 @@ type EnrollmentStatus struct {
 func (a *Agent) Status() EnrollmentStatus {
 	s := a.LoadState()
 	st := EnrollmentStatus{State: s.State, Enrolled: s.State == "enrolled", GatewayURL: a.gatewayURL(), Serial: s.Serial,
-		CertificateNotAfter: s.NotAfter, LastHeartbeatAt: s.LastHeartbeatAt, LastError: s.LastError}
+		CertificateNotAfter: s.NotAfter, LastHeartbeatAt: s.LastHeartbeatAt, LastError: s.LastError, DeletedAt: s.DeletedAt}
+	st.Deletion = ReadDeletionStatus(a.DeletionDir()) // Module 17: nil unless the local administrator asked for the deletion
 	if en, err := config.LoadEnrollment(a.EnrollmentPath); err == nil {
 		t := en.ExpiresAt
 		st.TokenExpiresAt = &t
@@ -175,6 +181,8 @@ func (a *Agent) Status() EnrollmentStatus {
 		st.Detail = "Enrolled with the Control Plane; communicating over mutual TLS with this installation's machine certificate."
 	case "revoked":
 		st.Detail = "The machine certificate was revoked or replaced. Re-enroll with a new package from the dashboard."
+	case "deleted":
+		st.Detail = "All data on this appliance was deleted at the local administrator's request and its machine identity is gone. Remove the containers and volumes with scripts/uninstall.sh --wipe --confirm " + a.Cfg.Deployment.Code + "."
 	case "decommissioned":
 		st.Detail = "The provider decommissioned this deployment: its management identity is retired and the appliance no longer reports to the Control Plane. Tickets, data and the local admin stay on this host until the operator removes the appliance (scripts/uninstall.sh)."
 		st.DecommissionedAt = s.DecommissionedAt
@@ -208,6 +216,14 @@ func (a *Agent) Status() EnrollmentStatus {
 func (a *Agent) step(ctx context.Context, interval, backoff time.Duration) time.Duration {
 	s := a.LoadState()
 	next := interval
+	// Module 17: a deletion requested by the local administrator takes over the cycle until everything is gone.
+	if req := ReadDeletionRequest(a.DeletionDir()); req != nil {
+		return a.deletionStep(ctx, s, req, backoff, interval)
+	}
+	if s.State == "deleted" {
+		a.writeStatusFile()
+		return interval
+	}
 	if s.State == "decommissioned" {
 		// Module 15: nothing is collected or sent any more; the worker is told once and its answer consumed.
 		a.decommissionedStep(s)

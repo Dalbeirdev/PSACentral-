@@ -34,7 +34,8 @@ if ($Wipe) {
     $json = & docker @composeArgs exec -T edge-agent edge-agent status 2>$null
     if ($LASTEXITCODE -eq 0 -and $json) { $state = ($json | ConvertFrom-Json).state }
   } catch { $state = '' }
-  if ($state -and $state -ne 'decommissioned' -and $state -ne 'revoked' -and -not $Force) {
+  # 'deleted' (Module 17): the local administrator already deleted all data and deregistered from the appliance.
+  if ($state -and $state -ne 'decommissioned' -and $state -ne 'revoked' -and $state -ne 'deleted' -and -not $Force) {
     Fail "The agent reports state '$state': the Control Plane has not decommissioned this deployment. Decommission it in the dashboard first (its identity is retired and the agent reports 'decommissioned'), or pass -Force to wipe anyway."
   }
   Step 'Wiping {{deploymentCode}}: containers, networks, data volumes (database, logs, backups, agent state), .\secrets and .env'

@@ -66,6 +66,7 @@ then run the package's `install.sh` as usual. Registry publication with cosign s
 
 - **Compromised or replaced appliance**: Deployment → Settings → *Revoke agent certificate* (audited). The gateway refuses the old certificate immediately; generate a new package to re-enroll.
 - **Expired certificate** (agent offline for longer than the certificate lifetime): the deployment shows *Offline*; re-enroll with a new package.
+- **Re-enrolling an installed appliance in place** (same host, same data): generate the new package, replace `enrollment/enrollment.json`, `config/edge.json` and `config/license.json` in the package folder (they are mode 444: replace them, do not edit in place, and leave the copies world-readable — the containers run as their own user), clear the agent state volume, then `docker compose up -d --force-recreate` — a plain restart keeps the old files, because a file bind mount follows the inode it was created with. The helper on Windows (`Install-EdgePackage.ps1 -Zip`) does this for you.
 - **Rotation**: automatic after two thirds of the lifetime; no action needed.
 
 ## 6. PSA credentials and connection tests (Module 11)
@@ -120,3 +121,11 @@ then run the package's `install.sh` as usual. Registry publication with cosign s
 3. **"Invalid token" or "Token for another appliance"**: the package was copied to another host, or `/var/log/psa-edge/license/current.json` was altered. The next heartbeat overwrites it with a fresh token; if it persists, the image was built with a different key than the Control Plane's (`keyId` on the status page vs `GET /settings/licensing-key`) — rebuild the image with `cp.sh build` / `pnpm edge:build` and upgrade.
 4. **Control Plane outage**: appliances keep working for 30 days (token) + 14 days (grace); the status page shows *grace* with the deadline. Restore the Control Plane before the grace ends; nothing else is needed.
 5. **Old packages** (before Module 16) keep working against an upgraded Control Plane: the first heartbeat delivers the token.
+
+## 12. A client deleted a deployment from the appliance (Module 17)
+
+1. **What you see.** The deployment is gone from the dashboard; *Activity & audit logs* → category *Deleted by clients* shows `deployment.deleted_by_client` on the client with who asked on the appliance, the reason, the installation id, the certificate serials and the rows deleted. Nothing else about the deployment exists any more; the license seat is free.
+2. **Nothing to do on the Control Plane.** The client's host operator finishes with `scripts/uninstall.sh --wipe --confirm DEP-nnnnn` (no `--force` needed). If the client wants the service again, onboard a new deployment: identities are never reused.
+3. **The appliance says "refused".** Its certificate was revoked, superseded or expired on the Control Plane, so the deletion could not be authenticated. Either the client deletes locally anyway (the page offers it; then remove the record yourself: decommission → remove, or let retention purge it), or re-enroll first if the service is to continue.
+4. **The appliance is stuck in "deregistering".** It cannot reach the gateway; it retries every up to five minutes and deletes nothing meanwhile. Check the gateway address and the client's egress; the audit event appears the moment the request gets through.
+5. **Honest limits.** The appliance cannot remove its own containers and volumes (no Docker access by design) — the status page says so and names the command. Backups in the backups volume are removed by that command, not by the appliance.

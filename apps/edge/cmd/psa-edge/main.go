@@ -60,6 +60,10 @@ func licenseCurrentPath() string {
 	return config.Env("PSA_EDGE_LICENSE_CURRENT", "/var/log/psa-edge/license/current.json")
 }
 
+// Deletion (Module 17): the local administrator's request and the agent's progress on the shared volume.
+func deletionDir() string { return config.Env("PSA_EDGE_DELETION_DIR", "/var/log/psa-edge/deletion") }
+func logDir() string      { return config.Env("PSA_EDGE_LOG_DIR", "/var/log/psa-edge") }
+
 func syncInterval() time.Duration {
 	if d, err := time.ParseDuration(config.Env("PSA_EDGE_SYNC_INTERVAL", "5m")); err == nil && d >= 20*time.Second {
 		return d
@@ -155,7 +159,7 @@ func run(ctx context.Context, cmd string, args []string, log *slog.Logger) error
 			return err
 		}
 		defer pool.Close()
-		srv := &api.Server{Cfg: cfg, Pool: pool, Box: box, Version: Version, Log: log, LicensePackagePath: licensePackagePath(), LicenseCurrentPath: licenseCurrentPath(), Tester: &psa.Tester{Cfg: cfg, Pool: pool, Box: box, Log: log, Timeout: 20 * time.Second}, SyncInterval: syncInterval().String(), RemoteDir: remoteDir()}
+		srv := &api.Server{Cfg: cfg, Pool: pool, Box: box, Version: Version, Log: log, DeletionDir: deletionDir(), LicensePackagePath: licensePackagePath(), LicenseCurrentPath: licenseCurrentPath(), Tester: &psa.Tester{Cfg: cfg, Pool: pool, Box: box, Log: log, Timeout: 20 * time.Second}, SyncInterval: syncInterval().String(), RemoteDir: remoteDir()}
 		h, err := srv.Handler()
 		if err != nil {
 			return err
@@ -200,7 +204,7 @@ func run(ctx context.Context, cmd string, args []string, log *slog.Logger) error
 			testEvery = d
 		}
 		w := &worker.Worker{Cfg: cfg, Pool: pool, Log: log, Interval: 30 * time.Second,
-			Tester: &psa.Tester{Cfg: cfg, Pool: pool, Box: box, Log: log, Timeout: 20 * time.Second}, TestInterval: testEvery, SyncInterval: syncInterval(), RemoteDir: remoteDir(), LicensePackagePath: licensePackagePath(), LicenseCurrentPath: licenseCurrentPath()}
+			Tester: &psa.Tester{Cfg: cfg, Pool: pool, Box: box, Log: log, Timeout: 20 * time.Second}, TestInterval: testEvery, SyncInterval: syncInterval(), RemoteDir: remoteDir(), LicensePackagePath: licensePackagePath(), LicenseCurrentPath: licenseCurrentPath(), LogDir: logDir()}
 		if err := w.Run(ctx); err != nil && !errors.Is(err, worker.ErrRestartRequested) {
 			return err
 		}
@@ -216,7 +220,7 @@ func run(ctx context.Context, cmd string, args []string, log *slog.Logger) error
 			OutboxDir:      config.Env("PSA_EDGE_OUTBOX", "/var/log/psa-edge/outbox"),
 			StateDir:       config.Env("PSA_EDGE_AGENT_STATE", "/var/lib/psa-edge-agent"),
 			StatusFile:     config.Env("PSA_EDGE_AGENT_STATUS", "/var/log/psa-edge/agent-status.json"),
-			RemoteDir:      remoteDir(), LicensePackagePath: licensePackagePath(), LicenseCurrentPath: licenseCurrentPath()}
+			RemoteDir:      remoteDir(), LicensePackagePath: licensePackagePath(), LicenseCurrentPath: licenseCurrentPath(), DeletionDirPath: deletionDir()}
 		if sub == "renew" {
 			if err := a.Renew(ctx); err != nil {
 				return err

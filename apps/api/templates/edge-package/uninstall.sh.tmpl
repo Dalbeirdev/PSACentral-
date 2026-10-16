@@ -41,7 +41,8 @@ if [ "$WIPE" = 1 ]; then
   [ "$CONFIRM" = "{{deploymentCode}}" ] || fail "--wipe needs --confirm {{deploymentCode}} (the deployment ID, exactly as shown in the dashboard)."
   # The agent's own view of its identity: 'decommissioned' once the Control Plane retired it.
   STATE=$("${COMPOSE[@]}" exec -T edge-agent edge-agent status 2>/dev/null | sed -n 's/.*"state":"\([a-z_]*\)".*/\1/p' | head -n 1 || true)
-  if [ -n "$STATE" ] && [ "$STATE" != "decommissioned" ] && [ "$STATE" != "revoked" ] && [ "$FORCE" != 1 ]; then
+  # 'deleted' (Module 17): the local administrator already deleted all data and deregistered from the appliance.
+  if [ -n "$STATE" ] && [ "$STATE" != "decommissioned" ] && [ "$STATE" != "revoked" ] && [ "$STATE" != "deleted" ] && [ "$FORCE" != 1 ]; then
     fail "The agent reports state '$STATE': the Control Plane has not decommissioned this deployment. Decommission it in the dashboard first (its identity is retired and the agent reports 'decommissioned'), or pass --force to wipe anyway."
   fi
   step "Wiping {{deploymentCode}}: containers, networks, data volumes (database, logs, backups, agent state), ./secrets and .env"

@@ -1,0 +1,84 @@
+{{template "head" .}}
+{{with .Data}}
+<h1>Delete all data and deregister</h1>
+{{if not .Requested}}
+<p class="lead">End the service for <span class="mono">{{.Code}}</span> from this appliance. Nothing here is triggered by the provider: you decide, and the appliance does the rest.</p>
+<div class="grid">
+  <section class="card" aria-labelledby="what-h">
+    <h2 id="what-h">What happens</h2>
+    <ol>
+      <li><strong>PSA work stops at once.</strong> No further connection tests or ticket synchronization.</li>
+      <li><strong>The Control Plane is told</strong> over this appliance's own machine certificate. It deletes every record it holds about this deployment (reports, heartbeats, inventory, commands, certificates, packages, the deployment itself) in one transaction and keeps one audit event that says the client deleted it.</li>
+      <li><strong>Everything on this appliance is deleted:</strong> tickets, ticket history, the encrypted PSA credentials, logs, synchronization state, local administrator accounts, the report outbox, the license token and the machine identity.</li>
+      <li><strong>You remove the containers.</strong> The appliance cannot delete its own Docker resources; the final page shows the one command that does, from the package folder on this host.</li>
+    </ol>
+    <p class="hint">If the Control Plane cannot be reached, the appliance keeps trying; the local deletion starts only after the Control Plane confirmed, unless you decide otherwise on the next page.</p>
+  </section>
+  <section class="card" aria-labelledby="confirm-h">
+    <h2 id="confirm-h">Confirm</h2>
+    <p><strong>Irreversible.</strong> There is no backup on the Control Plane: it never holds ticket data or credentials.</p>
+    <form method="post" action="/deletion" data-testid="deletion-form">
+      <input type="hidden" name="csrf" value="{{$.Session.CSRF}}">
+      <label for="reason">Reason (optional, shared with the provider's audit trail)</label>
+      <input id="reason" name="reason" maxlength="500" value="{{index $.Fields "reason"}}" autocomplete="off">
+      <label for="confirm">Type the deployment ID <span class="mono">{{.Code}}</span></label>
+      <input id="confirm" name="confirm" required autocomplete="off" spellcheck="false">
+      <label for="password">Your password</label>
+      <input id="password" name="password" type="password" required autocomplete="current-password">
+      <label class="check"><input type="checkbox" name="acknowledge"> I understand that all tickets, credentials, logs and the identity of this appliance are deleted, and that the provider's records of it are deleted too.</label>
+      <button class="btn danger" type="submit" data-testid="deletion-submit">Delete all data and deregister</button>
+    </form>
+  </section>
+</div>
+{{else}}
+<p class="lead">Requested by <strong>{{if .Status}}{{.Status.RequestedBy}}{{end}}</strong> at <span class="mono">{{if .Status}}{{ts .Status.RequestedAt}}{{end}}</span> for <span class="mono">{{.Code}}</span>.</p>
+{{if .Done}}
+<div class="alert error" role="status" data-testid="deletion-done"><strong>All data deleted.</strong> {{if .Notified}}The Control Plane deleted its records of this deployment{{if .AuditEventID}} (audit event <span class="mono">{{.AuditEventID}}</span>){{end}}.{{else}}The Control Plane was <strong>not</strong> told (you chose to delete locally); ask the provider to remove the deployment record.{{end}} The database, logs, credentials and the machine identity on this appliance are gone.</div>
+{{else if .Refused}}
+<div class="alert error" role="alert" data-testid="deletion-refused"><strong>The Control Plane refused the deregistration:</strong> <span class="mono">{{.Status.LastError}}</span>. Nothing was deleted yet. Ask the provider, or delete the data on this appliance anyway (the provider is then not notified).</div>
+{{else}}
+<div class="alert info" role="status" data-testid="deletion-progress"><strong>{{.PhaseLabel}}.</strong> PSA work has stopped. This page refreshes itself every five seconds.{{if .Status}}{{if .Status.LastError}} Last error: <span class="mono">{{.Status.LastError}}</span> (attempt {{.Status.Attempts}}).{{end}}{{end}}</div>
+<meta http-equiv="refresh" content="5">
+{{end}}
+<div class="grid">
+  <section class="card" aria-labelledby="progress-h">
+    <h2 id="progress-h">Progress</h2>
+    <table class="kv">
+      <tr><th>Phase</th><td><span class="pill" data-testid="deletion-phase">{{if .Status}}{{.Status.Phase}}{{else}}requested{{end}}</span></td></tr>
+      <tr><th>Control Plane notified</th><td>{{if .Notified}}yes, at {{ts .Status.DeregisteredAt}}{{else}}{{if .LocalOnly}}no (local deletion chosen){{else}}not yet{{end}}{{end}}</td></tr>
+      {{if .Status}}{{if .Status.Attempts}}<tr><th>Attempts</th><td>{{.Status.Attempts}}{{if .Status.LastAttemptAt}} · last {{ts .Status.LastAttemptAt}}{{end}}</td></tr>{{end}}{{end}}
+      {{if .Done}}<tr><th>Local data deleted</th><td>{{ts .Status.WipedAt}}</td></tr>{{end}}
+    </table>
+    {{if .ControlRows}}<h3>Deleted on the Control Plane</h3><ul class="mono">{{range .ControlRows}}<li>{{.}}</li>{{end}}</ul>{{end}}
+    {{if .Done}}{{if .Status.Deleted}}<h3>Deleted on this appliance (rows per table)</h3><ul class="mono">{{range $k, $v := .Status.Deleted}}<li>{{$k}}: {{$v}}</li>{{end}}</ul>{{end}}{{end}}
+  </section>
+  {{if .Done}}
+  <section class="card" aria-labelledby="remove-h">
+    <h2 id="remove-h">Last step on this host</h2>
+    <p>Remove the containers, networks and volumes of <span class="mono">{{.Project}}</span> from the package folder (no <span class="mono">--force</span> is needed: the agent reports <span class="mono">deleted</span>):</p>
+    <pre class="mono">scripts/uninstall.sh --wipe --confirm {{.Code}}
+# Windows
+powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1 -Wipe -Confirm {{.Code}}</pre>
+    <ul>{{range .Status.Remaining}}<li>{{.}}</li>{{end}}</ul>
+  </section>
+  {{else if .Refused}}
+  <section class="card" aria-labelledby="local-h">
+    <h2 id="local-h">Delete the data on this appliance anyway</h2>
+    <p>The provider's records stay until the provider removes them; everything here is deleted now.</p>
+    {{if $.Session}}
+    <form method="post" action="/deletion/local" data-testid="deletion-local-form">
+      <input type="hidden" name="csrf" value="{{$.Session.CSRF}}">
+      <label for="confirm2">Type the deployment ID <span class="mono">{{.Code}}</span></label>
+      <input id="confirm2" name="confirm" required autocomplete="off" spellcheck="false">
+      <label for="password2">Your password</label>
+      <input id="password2" name="password" type="password" required autocomplete="current-password">
+      <label class="check"><input type="checkbox" name="acknowledge"> I understand that the provider is not notified.</label>
+      <button class="btn danger" type="submit">Delete local data without the provider</button>
+    </form>
+    {{else}}<p class="hint"><a href="/login">Sign in</a> to choose this.</p>{{end}}
+  </section>
+  {{end}}
+</div>
+{{end}}
+{{end}}
+{{template "foot" .}}

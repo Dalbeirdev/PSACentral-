@@ -1,0 +1,103 @@
+{
+  "deployment": "DEP-00033",
+  "client": "CL-00007",
+  "license": "LIC-00031",
+  "steps": [
+    {
+      "step": "installed",
+      "lifecycle": "verified",
+      "agentState": "enrolled"
+    },
+    {
+      "step": "deleted",
+      "agentState": "deleted",
+      "deletion": {
+        "phase": "wiped",
+        "requestedAt": "2026-10-16T11:58:26.244561017Z",
+        "requestedBy": "localadmin",
+        "reason": "Moving to another provider",
+        "attempts": 2,
+        "lastAttemptAt": "2026-10-16T11:59:03.67144899Z",
+        "lastError": "",
+        "controlPlaneNotified": true,
+        "deregisteredAt": "2026-10-16T11:59:03.67144899Z",
+        "wipedAt": "2026-10-16T11:59:21.704521372Z",
+        "deleted": {
+          "app_metadata": 13,
+          "audit_events": 7,
+          "backup_runs": 1,
+          "credential_store": 2,
+          "helpdesk_tickets": 0,
+          "integration_logs": 4,
+          "local_admin_sessions": 2,
+          "local_admin_users": 1,
+          "psa_connection_tests": 1,
+          "psa_connections": 1,
+          "service_configurations": 0,
+          "sync_runs": 0,
+          "ticket_events": 0
+        },
+        "remaining": [
+          "The Docker containers, networks and data volumes of this appliance: run scripts/uninstall.sh --wipe --confirm DEP-00033 from the package folder (Windows: scripts\\uninstall.ps1 -Wipe -Confirm DEP-00033).",
+          "The backups volume (removed by the same command).",
+          "The package folder itself, and the PSA Edge image once no other appliance on this host uses it."
+        ],
+        "controlPlaneDeleted": {
+          "certificates": 1,
+          "commands": 0,
+          "deployments": 1,
+          "enrollmentTokens": 1,
+          "healthEvents": 1,
+          "heartbeats": 0,
+          "latestReports": 9,
+          "packageDownloads": 1,
+          "packages": 1,
+          "reports": 9,
+          "tableInventory": 14
+        },
+        "auditEventId": "present"
+      }
+    },
+    {
+      "step": "control-plane",
+      "detailStatus": 404
+    },
+    {
+      "step": "audit",
+      "found": true,
+      "metadata": {
+        "code": "DEP-00033",
+        "requestedBy": "localadmin",
+        "reason": "Moving to another provider",
+        "deleted": {
+          "reports": 9,
+          "commands": 0,
+          "packages": 1,
+          "heartbeats": 0,
+          "deployments": 1,
+          "enrollments": 1,
+          "certificates": 1,
+          "healthEvents": 1,
+          "latestReports": 9,
+          "tableInventory": 14,
+          "packageDownloads": 1
+        },
+        "lifecycleState": "verified"
+      }
+    },
+    {
+      "step": "uninstall-wipe",
+      "exit": 0,
+      "tail": [
+        "",
+        "Removed: no container, network, volume or secret of psacc-dep-00033 remains on this host.",
+        "Delete this folder when the package is no longer needed. The PSA Edge image can be removed with 'docker image rm' once no other deployment on this host uses it."
+      ]
+    },
+    {
+      "step": "leftovers",
+      "containers": 0,
+      "volumes": 0
+    }
+  ]
+}

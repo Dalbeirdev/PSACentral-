@@ -24,6 +24,7 @@ const ACTION_PRESETS = [
   { value: 'user', label: 'User administration' },
   { value: 'access.denied', label: 'Access denied' },
   { value: 'system', label: 'System' },
+  { value: 'deployment.deleted_by_client', label: 'Deleted by clients (from the appliance)' },
 ];
 
 export default async function AuditPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
