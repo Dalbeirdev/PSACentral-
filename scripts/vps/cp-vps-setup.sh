@@ -4,6 +4,7 @@
 #
 #   curl -fsSL https://raw.githubusercontent.com/Dalbeirdev/PSACentral-/main/scripts/vps/cp-vps-setup.sh | sudo bash
 #   (or clone the repository and run: sudo scripts/vps/cp-vps-setup.sh)
+#   Rehearsal on a workstation (no ufw, local registry): PSACC_SKIP_FIREWALL=1 PSACC_DIR=/opt/psacc-rehearsal ...
 #
 # What it does: installs Docker Engine + Compose, opens only 22/80/443 and the agent gateway port in
 # ufw, clones (or updates) the repository into /opt/psacc, and writes infra/control-plane/.env with
@@ -39,13 +40,18 @@ fi
 systemctl enable --now docker
 docker compose version
 
-step "Firewall: SSH, HTTP, HTTPS and the agent gateway ($GATEWAY_PORT) only"
-ufw allow OpenSSH >/dev/null
-ufw allow 80/tcp >/dev/null
-ufw allow 443/tcp >/dev/null
-ufw allow "$GATEWAY_PORT/tcp" >/dev/null
-ufw --force enable >/dev/null
-ufw status | sed 's/^/  /'
+if [ "${PSACC_SKIP_FIREWALL:-0}" = 1 ]; then
+  step "Firewall: skipped (PSACC_SKIP_FIREWALL=1 — rehearsal or an externally managed firewall)"
+else
+  step "Firewall: SSH, HTTP, HTTPS and the agent gateway ($GATEWAY_PORT) only"
+  command -v ufw >/dev/null 2>&1 || apt-get install -y -q ufw
+  ufw allow OpenSSH >/dev/null
+  ufw allow 80/tcp >/dev/null
+  ufw allow 443/tcp >/dev/null
+  ufw allow "$GATEWAY_PORT/tcp" >/dev/null
+  ufw --force enable >/dev/null
+  ufw status | sed 's/^/  /'
+fi
 
 step "Repository in $TARGET"
 if [ -d "$TARGET/.git" ]; then

@@ -5,6 +5,7 @@
 # Usage: scripts/vps/cp.sh <command>
 #   build            build psacc/control-plane-api, -web and psacc/psa-edge from this checkout
 #   cert             issue the first Let's Encrypt certificate for PSACC_DOMAIN (port 80 must be free)
+#   cert --self-signed   a self-signed certificate instead (rehearsal / LAN only; browsers warn)
 #   up | down        start / stop the stack (PostgreSQL, migrations, API + gateway, web, edge, certbot)
 #   status           containers, health endpoints and certificate dates
 #   logs [service]   follow logs
@@ -42,6 +43,14 @@ case "$cmd" in
   cert)
     need_env
     DOMAIN="$(env_get PSACC_DOMAIN)"; EMAIL="$(env_get LETSENCRYPT_EMAIL)"
+    if [ "${1:-}" = "--self-signed" ]; then
+      step "Self-signed certificate for $DOMAIN (rehearsal / LAN only; browsers warn; not for production)"
+      case "$DOMAIN" in *[a-z]*) SAN="DNS:$DOMAIN,DNS:www.$DOMAIN" ;; *) SAN="IP:$DOMAIN" ;; esac
+      docker run --rm -v psacc-cp-letsencrypt:/etc/letsencrypt --entrypoint sh alpine/openssl -c \
+        "mkdir -p /etc/letsencrypt/live/$DOMAIN && openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes -days 30 -subj /CN=$DOMAIN -addext subjectAltName=$SAN -keyout /etc/letsencrypt/live/$DOMAIN/privkey.pem -out /etc/letsencrypt/live/$DOMAIN/fullchain.pem"
+      echo "Self-signed certificate written for $DOMAIN; start the stack with: scripts/vps/cp.sh up"
+      exit 0
+    fi
     [ -n "$DOMAIN" ] && [ -n "$EMAIL" ] || { echo "ERROR: PSACC_DOMAIN and LETSENCRYPT_EMAIL must be set in .env" >&2; exit 1; }
     step "Checking that $DOMAIN resolves to this host"
     MINE="$(curl -4 -s --max-time 10 https://api.ipify.org || true)"; THEIRS="$(getent ahostsv4 "$DOMAIN" | awk 'NR==1{print $1}')"
@@ -67,7 +76,7 @@ case "$cmd" in
     compose ps
     step "Health"
     printf '  API live:     '; curl -s -o /dev/null -w '%{http_code}\n' "http://127.0.0.1:$(env_get API_PORT)/api/v1/health/live" || true
-    printf '  Dashboard:    '; curl -s -o /dev/null -w '%{http_code}\n' "https://$DOMAIN/login" || true
+    printf '  Dashboard:    '; curl -sk -o /dev/null -w '%{http_code}\n' "https://$DOMAIN/login" || true
     printf '  Agent gateway: '; curl -sk -o /dev/null -w '%{http_code}\n' "https://$DOMAIN:$(env_get AGENT_GATEWAY_PORT)/agent/v1/health" || true
     step "Certificate"
     docker run --rm -v psacc-cp-letsencrypt:/etc/letsencrypt:ro certbot/certbot certificates 2>/dev/null | grep -E 'Domains|Expiry' || echo "  (none yet: run scripts/vps/cp.sh cert)"
