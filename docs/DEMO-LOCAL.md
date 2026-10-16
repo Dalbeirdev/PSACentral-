@@ -26,7 +26,15 @@ choose **Local testing environment**, Linux, amd64 in the deployment step. Step 
 client, its PSA instance, its first license and the deployment record; step 8 generates and
 downloads the package (`psacc-dep-nnnnn-package-n.zip`, token valid for the chosen hours).
 
-## 2. Install the appliance (one PowerShell command)
+## 2. Install the appliance (one command)
+
+From **Command Prompt** (cmd.exe):
+
+```bat
+"E:\PSA COntrole center\scripts\edge\psa-edge.cmd" install "%USERPROFILE%\Downloads\psacc-dep-00030-package-1.zip"
+```
+
+From **PowerShell**:
 
 ```powershell
 cd "E:\PSA COntrole center"
@@ -59,6 +67,8 @@ needs real credentials, so for a demo without them the appliance shows *not conf
 - Licenses, suspension (Overview → *Suspend deployment*) and the final decommissioning page.
 
 ## 5. Day-to-day on this machine
+
+From Command Prompt: `psa-edge.cmd status DEP-00030`, `stop DEP-00030`, `wipe DEP-00030` (same folder). From PowerShell:
 
 ```powershell
 .\scripts\edge\Install-EdgePackage.ps1 -Status DEP-00030    # containers, agent state, verify checks
