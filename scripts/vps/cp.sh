@@ -76,8 +76,9 @@ case "$cmd" in
     compose ps
     step "Health"
     printf '  API live:     '; curl -s -o /dev/null -w '%{http_code}\n' "http://127.0.0.1:$(env_get API_PORT)/api/v1/health/live" || true
-    printf '  Dashboard:    '; curl -sk -o /dev/null -w '%{http_code}\n' "https://$DOMAIN/login" || true
-    printf '  Agent gateway: '; curl -sk -o /dev/null -w '%{http_code}\n' "https://$DOMAIN:$(env_get AGENT_GATEWAY_PORT)/agent/v1/health" || true
+    # --resolve: checks this host's own listeners even where the public address does not hairpin back (NAT, WSL).
+    printf '  Dashboard:    '; curl -sk --resolve "$DOMAIN:443:127.0.0.1" -o /dev/null -w '%{http_code}\n' "https://$DOMAIN/login" || true
+    printf '  Agent gateway: '; curl -sk --resolve "$DOMAIN:$(env_get AGENT_GATEWAY_PORT):127.0.0.1" -o /dev/null -w '%{http_code}\n' "https://$DOMAIN:$(env_get AGENT_GATEWAY_PORT)/agent/v1/health" || true
     step "Certificate"
     docker run --rm -v psacc-cp-letsencrypt:/etc/letsencrypt:ro --entrypoint sh alpine/openssl -c "openssl x509 -in /etc/letsencrypt/live/$DOMAIN/fullchain.pem -noout -subject -issuer -enddate 2>/dev/null" | sed 's/^/  /' || true
     docker run --rm -v psacc-cp-letsencrypt:/etc/letsencrypt:ro --entrypoint sh alpine/openssl -c "test -s /etc/letsencrypt/live/$DOMAIN/fullchain.pem" 2>/dev/null || echo "  (none yet: run scripts/vps/cp.sh cert)"
