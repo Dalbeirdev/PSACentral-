@@ -2,3 +2,7 @@
 *.sh text eol=lf
 *.png binary
 *.ico binary
+
+# Windows-native scripts keep CRLF (cmd.exe labels, Windows PowerShell 5.1)
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
