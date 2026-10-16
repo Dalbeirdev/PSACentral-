@@ -1,0 +1,55 @@
+# PSA Control Center — public edge for a dedicated VPS with a real domain (techpio.tech).
+# Overlay on compose.yaml:
+#   docker compose --env-file .env -f compose.yaml -f compose.public.yaml up -d
+# Adds an nginx edge on 80/443 (Let's Encrypt certificate, HTTP → HTTPS, security headers) in front of
+# the web container, and a certbot sidecar that renews the certificate. The agent gateway stays where
+# it is (host port 8643, mutual TLS, the API's own listener) — it is never proxied.
+# The first certificate is issued before this edge starts (scripts/vps/cp.sh cert); afterwards renewal
+# uses the ACME webroot served by the edge and nginx reloads every six hours to pick up new files.
+services:
+  edge:
+    image: nginx:1.29-alpine
+    container_name: psacc-cp-edge
+    restart: unless-stopped
+    environment:
+      PSACC_DOMAIN: ${PSACC_DOMAIN:?set PSACC_DOMAIN in .env, e.g. techpio.tech}
+    volumes:
+      - ./nginx/edge.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - letsencrypt:/etc/letsencrypt:ro
+      - certbot-webroot:/var/www/certbot:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    # Reload periodically so renewed certificates are picked up without a restart.
+    command: ["/bin/sh", "-c", "while :; do sleep 6h; nginx -s reload; done & exec nginx -g 'daemon off;'"]
+    depends_on:
+      web:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: psacc-cp-certbot
+    restart: unless-stopped
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      - certbot-webroot:/var/www/certbot
+    # certbot's own recommendation: try twice a day with a random delay; nothing happens until ~30 days before expiry.
+    entrypoint: ["/bin/sh", "-c", "trap exit TERM; while :; do sleep $$((RANDOM % 3600)); certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done"]
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  letsencrypt:
+    name: psacc-cp-letsencrypt
+  certbot-webroot:
+    name: psacc-cp-certbot-webroot

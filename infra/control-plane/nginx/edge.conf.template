@@ -1,0 +1,68 @@
+# PSA Control Center public edge — rendered by the nginx image from this template (envsubst of
+# ${PSACC_DOMAIN}). One site: the dashboard (web container), which itself proxies /api to the API.
+# The agent gateway (mutual TLS, host port 8643) is the API's own listener and is NOT behind nginx.
+
+# HTTP: ACME challenges for certificate renewal, everything else redirected to HTTPS.
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ${PSACC_DOMAIN} www.${PSACC_DOMAIN};
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+    location / {
+        return 301 https://${PSACC_DOMAIN}$request_uri;
+    }
+}
+
+# Any other host name on this address gets nothing (no default-site fall-through to the dashboard).
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+    return 444;
+}
+
+server {
+    listen 443 ssl default_server;
+    listen [::]:443 ssl default_server;
+    http2 on;
+    server_name ${PSACC_DOMAIN} www.${PSACC_DOMAIN};
+
+    ssl_certificate     /etc/letsencrypt/live/${PSACC_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${PSACC_DOMAIN}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_session_timeout 1d;
+    ssl_session_cache shared:psacc:10m;
+    ssl_session_tickets off;
+
+    # The dashboard is private to the provider: no indexing, strict transport, no framing.
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options DENY always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+    add_header X-Robots-Tag "noindex, nofollow" always;
+
+    client_max_body_size 10m;
+    proxy_read_timeout 120s;
+
+    # Only the configured host name is served over TLS; a request with another Host header is dropped.
+    if ($host !~* ^(${PSACC_DOMAIN}|www\.${PSACC_DOMAIN})$) { return 444; }
+
+    # Docker's embedded DNS; resolve the service name at request time so a web restart is survived.
+    resolver 127.0.0.11 valid=30s ipv6=off;
+    set $psacc_web http://web:3000;
+
+    location / {
+        proxy_pass $psacc_web;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_buffering off;
+    }
+}
