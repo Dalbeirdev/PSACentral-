@@ -10,6 +10,7 @@ import (
 
 	"psacc.local/edge/internal/config"
 	"psacc.local/edge/internal/inventory"
+	"psacc.local/edge/internal/license"
 	"psacc.local/edge/internal/remote"
 )
 
@@ -35,9 +36,10 @@ func TestTemplatesRender(t *testing.T) {
 		Enrollment: map[string]any{"enrolled": true, "state": "enrolled", "detail": "Enrolled", "lastHeartbeatAt": "2026-10-14T12:00:00Z"},
 		RecentLogs: []map[string]any{{"at": now, "level": "info", "component": "worker", "message": "<script>alert(1)</script>"}},
 		// A synchronization has happened: the branch that reads the run details must render too.
-		Sync:      map[string]any{"lastStatus": "succeeded", "lastRunAt": now, "itemsReceived": 3, "itemsSent": 1, "itemsFailed": 0, "pendingOutbound": 0},
-		Lifecycle: map[string]any{"suspended": true, "since": "2026-10-15T12:00:00Z", "reason": "Invoice overdue"},
-		License:   map[string]any{"code": "LIC-00007", "displayName": "Help Desk Standard", "endsAt": "2027-06-30"},
+		Sync:         map[string]any{"lastStatus": "succeeded", "lastRunAt": now, "itemsReceived": 3, "itemsSent": 1, "itemsFailed": 0, "pendingOutbound": 0},
+		Lifecycle:    map[string]any{"suspended": true, "since": "2026-10-15T12:00:00Z", "reason": "Invoice overdue"},
+		License:      map[string]any{"code": "LIC-00007", "displayName": "Help Desk Standard", "endsAt": "2027-06-30"},
+		LicenseCheck: license.Status{State: "valid", KeySource: "image", PSAWorkAllowed: true, VerifiedAt: "2026-10-16T08:00:00Z", Detail: "License LIC-00007; token valid until 2026-11-15."},
 		Remote: map[string]any{"version": "0.1.0", "commands": []remote.CommandRecord{{ID: "c1", Type: "refresh_health", ReceivedAt: now, Status: "succeeded", Code: "reports_delivered", Message: "1 batch", Reported: true}},
 			"stagedUpgrade": &remote.UpgradeOrder{CommandID: "c2", Image: "psacc/psa-edge:0.2.0", Version: "0.2.0", ExpiresAt: now}},
 	}
@@ -78,6 +80,9 @@ func TestTemplatesRender(t *testing.T) {
 		if name == "removal.html" && (!strings.Contains(body, "decommissioned-banner") || !strings.Contains(body, "--wipe --confirm DEP-00042") || !strings.Contains(body, "-Wipe -Confirm DEP-00042")) {
 			t.Error("the removal page must show the decommissioned banner and the typed-confirmation wipe commands")
 		}
+		if name == "dashboard.html" && (!strings.Contains(body, `data-testid="license-state"`) || strings.Contains(body, "license-banner")) {
+			t.Error("dashboard must show the license token state and no banner while the token is valid")
+		}
 		if name == "dashboard.html" && (!strings.Contains(body, "Services on this appliance") || !strings.Contains(body, "received 3")) {
 			t.Error("dashboard must render completely after a synchronization (the run details and every later section)")
 		}
@@ -108,5 +113,31 @@ func TestDashboardShowsTheStagedUpgradeFromTheSharedVolume(t *testing.T) {
 		if !strings.Contains(body, want) {
 			t.Errorf("dashboard is missing %q", want)
 		}
+	}
+}
+
+// Module 16: a blocked license token shows the banner on the status page and disables Sync now.
+func TestDashboardAndSyncShowABlockedLicenseToken(t *testing.T) {
+	cfg := &config.Edge{}
+	cfg.Deployment.Code, cfg.Client.DisplayName = "DEP-00042", "Test Client A"
+	cfg.PSA.DisplayName, cfg.PSA.Provider = "A — Autotask", "autotask"
+	s := &Server{Cfg: cfg, Version: "test", Log: slog.New(slog.NewTextHandler(io.Discard, nil))}
+	if _, err := s.Handler(); err != nil {
+		t.Fatal(err)
+	}
+	se := &session{Username: "localadmin", CSRF: strings.Repeat("c", 40)}
+	status := Status{Deployment: map[string]string{"code": "DEP-00042"}, Enrollment: map[string]any{"enrolled": true, "state": "enrolled"},
+		Lifecycle: map[string]any{"suspended": false}, Remote: map[string]any{"version": "0.1.0"},
+		LicenseCheck: license.Status{State: "revoked", KeySource: "image", PSAWorkAllowed: false, VerifiedAt: "2026-10-16T08:00:00Z", Detail: "The Control Plane reported the license as inactive: License LIC-00007 is suspended."}}
+	w := httptest.NewRecorder()
+	s.render(w, 200, "dashboard.html", viewData{Title: "Appliance status", Session: se, Data: status})
+	if body := w.Body.String(); !strings.Contains(body, `data-testid="license-banner"`) || !strings.Contains(body, "LIC-00007 is suspended") {
+		t.Fatalf("blocked license must show the banner: %s", body[:200])
+	}
+	w = httptest.NewRecorder()
+	now := time.Now()
+	s.render(w, 200, "sync.html", viewData{Title: "Synchronization", Session: se, Data: map[string]any{"Runs": []syncRunRow{}, "Pending": 0, "Conflicts24h": 0, "LocalOnly": 0, "PushFailed": 0, "LastSucceededAt": &now, "Watermark": &now, "Runs24h": 0, "Failed24h": 0, "Requested": (*string)(nil), "ConnectionStatus": "verified", "Supported": true, "Provider": "autotask", "Interval": "5m0s", "Suspended": false, "Decommissioned": false, "LicenseBlocked": true, "LicenseState": "expired", "LicenseDetail": "The token expired."}})
+	if body := w.Body.String(); !strings.Contains(body, `data-testid="license-banner"`) || !strings.Contains(body, `type="submit" disabled>Sync now`) {
+		t.Fatalf("sync page must show the banner and disable Sync now: %s", body[:300])
 	}
 }

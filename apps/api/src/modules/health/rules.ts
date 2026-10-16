@@ -93,6 +93,12 @@ export function evaluateHealth(input: EvaluationInput): HealthEvaluation {
   }
 
   const c = latest.certificates_security?.payload;
+  // Module 16: the appliance verified its license token itself; anything but valid/grace means it stopped PSA work.
+  if (c?.license) {
+    const l = c.license;
+    if (l.state === 'grace') add('info', 'appliance_license_grace', `The appliance's license token expired and is in its grace period (${l.detail}).`);
+    else if (l.state !== 'valid') add('degraded', `appliance_license_${l.state}`, `The appliance reports its license token as ${l.state}: ${l.detail}`);
+  }
   if (c) {
     if (c.daysRemaining < 0) add('critical', 'certificate_expired', 'The agent certificate has expired.');
     else if (c.daysRemaining <= policy.certificateWarnDays) add('degraded', 'certificate_expiring', `The agent certificate expires in ${c.daysRemaining} day(s).`);

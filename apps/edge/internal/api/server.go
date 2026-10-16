@@ -21,6 +21,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"psacc.local/edge/internal/config"
 	"psacc.local/edge/internal/inventory"
+	"psacc.local/edge/internal/license"
 	"psacc.local/edge/internal/psa"
 	"psacc.local/edge/internal/remote"
 	"psacc.local/edge/internal/secretbox"
@@ -49,7 +50,10 @@ type Server struct {
 	SyncInterval string
 	tpl          *template.Template
 	// RemoteDir is the shared directory of remote command hand-over (Module 13).
-	RemoteDir string
+	// License files (Module 16): the package copy and the current token the agent keeps fresh.
+	LicensePackagePath string
+	LicenseCurrentPath string
+	RemoteDir          string
 }
 
 func (s *Server) Handler() (http.Handler, error) {
@@ -572,17 +576,20 @@ type Status struct {
 	// Lifecycle: provider suspension (Module 14) as recorded by the worker; License: the identifier from the package.
 	Lifecycle map[string]any `json:"lifecycle"`
 	License   map[string]any `json:"license"`
+	// LicenseCheck: the appliance's verification of its license token (Module 16); PSA work stops when not allowed.
+	LicenseCheck license.Status `json:"licenseCheck"`
 }
 
 func (s *Server) collectStatus(ctx context.Context) Status {
 	st := Status{
-		Deployment: map[string]string{"code": s.Cfg.Deployment.Code, "id": s.Cfg.Deployment.ID, "installationId": s.Cfg.Deployment.InstallationID, "client": s.Cfg.Client.DisplayName + " (" + s.Cfg.Client.Code + ")"},
-		Version:    s.Version,
-		Database:   inventory.Collect(ctx, s.Pool),
-		Enrollment: agentStatus(),
-		Remote:     s.remoteStatus(),
-		Lifecycle:  s.lifecycleStatus(ctx),
-		License:    s.licenseInfo(),
+		Deployment:   map[string]string{"code": s.Cfg.Deployment.Code, "id": s.Cfg.Deployment.ID, "installationId": s.Cfg.Deployment.InstallationID, "client": s.Cfg.Client.DisplayName + " (" + s.Cfg.Client.Code + ")"},
+		Version:      s.Version,
+		Database:     inventory.Collect(ctx, s.Pool),
+		Enrollment:   agentStatus(),
+		Remote:       s.remoteStatus(),
+		Lifecycle:    s.lifecycleStatus(ctx),
+		License:      s.licenseInfo(),
+		LicenseCheck: s.licenseVerification(),
 	}
 	connID, status, err := s.connectionID(ctx)
 	if err == nil {
@@ -708,7 +715,23 @@ func (s *Server) licenseInfo() map[string]any {
 	if s.Cfg.License.EndsAt != nil {
 		out["endsAt"] = *s.Cfg.License.EndsAt
 	}
+	out["verification"] = s.licenseVerification()
 	return out
+}
+
+// licenseVerification is this appliance's own check of its license token (Module 16).
+func (s *Server) licenseVerification() license.Status {
+	pkg, cur := s.LicensePackagePath, s.LicenseCurrentPath
+	if pkg == "" {
+		pkg = "/etc/psa-edge/license.json"
+	}
+	if cur == "" {
+		cur = "/var/log/psa-edge/license/current.json"
+	}
+	if s.Cfg == nil {
+		return license.Status{State: "missing", KeySource: "none", VerifiedAt: time.Now().UTC().Format(time.RFC3339), Detail: "No configuration."}
+	}
+	return license.Current(pkg, cur, s.Cfg.Deployment.ID, s.Cfg.Deployment.InstallationID, time.Now())
 }
 
 // remoteStatus summarizes remote command handling for the local admin (no secrets).

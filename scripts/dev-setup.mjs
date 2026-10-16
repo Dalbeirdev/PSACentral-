@@ -67,6 +67,7 @@ writeIfMissing(
     'SESSION_ABSOLUTE_HOURS=12',
     `CSRF_SECRET=${b64(32)}`,
     `DATA_ENCRYPTION_KEY=${b64(32)}`,
+    `LICENSE_SIGNING_KEY=${b64(32)}`,
     '',
     '# Application login (psacc_app: DML only, subject to row-level security)',
     `DATABASE_URL=${url('psacc_app', pg.PSACC_APP_PASSWORD, 'psacc_dev')}`,

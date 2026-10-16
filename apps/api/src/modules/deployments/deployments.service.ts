@@ -30,7 +30,7 @@ import {
   checkServiceConfig,
   type ConfigRequirement,
 } from '@psacc/contracts';
-import type { LicenseStatus } from '@psacc/contracts';
+import type { ApplianceLicenseStatus, LicenseStatus } from '@psacc/contracts';
 import type { AuthContext, RequestMeta } from '../../common/auth-context.js';
 import { randomToken, SecretBox, sha256 } from '../../common/crypto.js';
 import { JsonLogger } from '../../common/logger.js';
@@ -44,6 +44,7 @@ import { PkiService } from '../agents/pki.service.js';
 import { CommandsService } from './commands.service.js';
 import { daysRemaining, LicensesService } from './licenses.service.js';
 import { RetentionService } from './retention.service.js';
+import { LicenseTokensService } from './license-tokens.service.js';
 import { buildPackage } from './package-builder.js';
 
 type Row = Record<string, unknown>;
@@ -172,6 +173,7 @@ export class DeploymentsService implements OnModuleInit, OnModuleDestroy {
     @Inject(JsonLogger) private readonly logger: JsonLogger,
     @Inject(PkiService) private readonly pki: PkiService,
     @Inject(CommandsService) private readonly commands: CommandsService,
+    @Inject(LicenseTokensService) private readonly licenseTokens: LicenseTokensService,
   ) {
     this.box = new SecretBox(config.secrets.dataEncryptionKey);
   }
@@ -346,6 +348,10 @@ export class DeploymentsService implements OnModuleInit, OnModuleDestroy {
       ? ((await q.maybeOne<{ display_name: string }>('SELECT display_name FROM users WHERE id = $1', [r.decommissioned_by]))?.display_name ?? null)
       : null;
     const retentionDays = r.lifecycle_state === 'decommissioned' ? await RetentionService.daysIn(q, r.organization_id as string) : 0;
+    // Module 16: the appliance's own verification of its license token, from its latest security report.
+    const applianceLicense = ((await q.maybeOne<{ payload: Row }>(
+      `SELECT payload FROM deployment_report_latest WHERE deployment_id = $1 AND report_type = 'certificates_security'`, [id],
+    ))?.payload?.license as ApplianceLicenseStatus | undefined) ?? null;
     const certs = await q.query<Row>(
       `SELECT id, serial, encode(fingerprint, 'hex') AS fp, subject, installation_id, status, issued_via, issued_at, not_before, not_after,
               last_seen_at, agent_version, revoked_at, revoke_reason
@@ -390,6 +396,7 @@ export class DeploymentsService implements OnModuleInit, OnModuleDestroy {
       suspension: r.lifecycle_state === 'suspended'
         ? { at: iso(r.suspended_at)!, reason: (r.suspended_reason as string) ?? '', fromState: r.suspended_from_state as DeploymentLifecycleState, by: suspendedBy }
         : null,
+      applianceLicense,
       decommission: r.lifecycle_state === 'decommissioned'
         ? {
             at: iso(r.decommissioned_at)!, reason: r.decommissioned_reason as string, by: decommissionedBy, fromState: r.decommissioned_from_state as DeploymentLifecycleState,
@@ -540,6 +547,9 @@ export class DeploymentsService implements OnModuleInit, OnModuleDestroy {
         },
         client: { id: r.client_id as string, code: r.client_code as string, displayName: r.client_name as string },
         license: r.license_code ? { id: r.license_id as string, code: r.license_code as string, displayName: r.license_name as string, endsAt: ymd(r.license_ends) } : null,
+        // Module 16: the first license token, bound to this package's installation id.
+        licenseToken: (await this.licenseTokens.renewalFor(q, id, installationId)).token,
+        licenseKey: { keyId: this.licenseTokens.info.keyId, publicKeyPem: this.licenseTokens.info.publicKeyPem },
         psa: {
           instanceId: r.psa_instance_id as string, code: r.psa_code as string, displayName: r.psa_name as string, providerKey: r.provider_key as PsaProviderKey,
           providerName: r.provider_name as string, authMethod: (r.psa_auth_method as string | null) ?? null, apiEndpoint: (r.psa_endpoint as string | null) ?? null,

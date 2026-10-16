@@ -181,3 +181,9 @@ Overview cards: identity (Deployment / Installation / License IDs, image version
 - **Deployments list**: *Suspended* and *Decommissioned* stage cards act as filters beside the five build stages.
 - **Settings → Data retention** (`/settings/retention`, `settings.manage`): three count cards (decommissioned, awaiting purge with the next due time, purged), the retention days field with inline validation, *Reset to default (90 days)*, and *Purge what is due now* with an inline confirmation and an honest result (how many were purged, or that nothing was due).
 - **Appliance local admin**: a red *Decommissioned by the provider* banner on the status and synchronization pages (linking to *Removal*), *Sync now* disabled, the lifecycle pill *decommissioned*, and a **Removal** page with the order of operations, the stop and wipe commands for both host types, and what the Control Plane keeps.
+
+## 17. License tokens (Module 16)
+
+- **Deployment overview**, *Agent and database* card: a new **Appliance license token** row with the appliance's own verdict (Valid / Grace period / Expired / No license token / Invalid token / Token for another appliance / Revoked by the provider), the renewal deadline, the key id and its source (*image* = pinned at build time, *package* = fallback copy), and *PSA work stopped on the appliance* when the state blocks it; *Not reported yet* until the first security report.
+- **Health page**: a *License token (verified by the appliance)* row and the findings `appliance_license_<state>` (degraded, with the appliance's own explanation; grace is informational).
+- **Appliance local admin**: the status page shows the token state as a pill with its expiry and key id; a red banner *License token <state>* explains why PSA work stopped, an informational banner shows the grace period; the synchronization page repeats the banner and disables *Sync now*.

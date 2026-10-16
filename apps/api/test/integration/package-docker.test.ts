@@ -52,6 +52,12 @@ async function download(c: Client, path: string): Promise<Buffer> {
 }
 
 const toUnix = (winPath: string) => (WSL ? sh(`wslpath -a '${winPath.replace(/'/g, "'\\''")}'`).out : winPath);
+/** Never install over a Compose project that already exists on this engine: it could be a real appliance (its cleanup would remove it). */
+function refuseExistingProject(project: string): void {
+  const containers = sh(`docker ps -aq --filter label=com.docker.compose.project=${project} | wc -l`).out.trim();
+  const volumes = sh(`docker volume ls -q --filter label=com.docker.compose.project=${project} | wc -l`).out.trim();
+  if (containers !== '0' || volumes !== '0') throw new Error(`refusing to install ${project}: a Compose project with that name already exists on this engine (${containers} containers, ${volumes} volumes)`);
+}
 
 describe.skipIf(!dockerAvailable)('generated packages on a real Docker Engine', () => {
   beforeAll(async () => {
@@ -74,6 +80,7 @@ describe.skipIf(!dockerAvailable)('generated packages on a real Docker Engine', 
       const file = join(winTmp, p.fileName);
       writeFileSync(file, zip);
       const project = `psacc-${dep.code.toLowerCase()}`;
+      refuseExistingProject(project);
       const r = sh(`set -e; mkdir -p ${work}/${project}-x && cd ${work}/${project}-x && unzip -q "${toUnix(file)}"`);
       expect(r.code, r.err).toBe(0);
       pkgs.push({ code: dep.code, project, dir: `${work}/${project}-x/${project}`, provider });

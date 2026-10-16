@@ -205,11 +205,12 @@ func (a *Agent) Enroll(ctx context.Context) error {
 		return err
 	}
 	var resp struct {
-		Certificate       string      `json:"certificate"`
-		CACertificate     string      `json:"caCertificate"`
-		Serial            string      `json:"serial"`
-		NotAfter          time.Time   `json:"notAfter"`
-		CommandSigningKey *SigningKey `json:"commandSigningKey"`
+		Certificate       string          `json:"certificate"`
+		CACertificate     string          `json:"caCertificate"`
+		Serial            string          `json:"serial"`
+		NotAfter          time.Time       `json:"notAfter"`
+		CommandSigningKey *SigningKey     `json:"commandSigningKey"`
+		License           *licenseRenewal `json:"license"`
 	}
 	if err := a.post(ctx, c, en.AgentGatewayURL, "/agent/v1/enroll", map[string]string{
 		"token": en.Token, "deploymentId": en.DeploymentID, "installationId": en.InstallationID, "csr": string(csrPEM), "agentVersion": a.Version,
@@ -239,6 +240,7 @@ func (a *Agent) Enroll(ctx context.Context) error {
 	nb, na := cert.Leaf.NotBefore, cert.Leaf.NotAfter
 	st := State{State: "enrolled", DeploymentID: en.DeploymentID, InstallationID: en.InstallationID, Serial: resp.Serial, EnrolledAt: &now, NotBefore: &nb, NotAfter: &na, LastHeartbeatAt: &now}
 	a.pinKey(&st, resp.CommandSigningKey)
+	a.storeLicense(resp.License, "enrollment")
 	return a.SaveState(st)
 }
 

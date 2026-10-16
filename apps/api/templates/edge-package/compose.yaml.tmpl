@@ -86,6 +86,7 @@ services:
       - "127.0.0.1:${EDGE_LOCAL_ADMIN_PORT:-{{localAdminPort}}}:8480"
     volumes:
       - ./config/edge.json:/etc/psa-edge/edge.json:ro
+      - ./config/license.json:/etc/psa-edge/license.json:ro
       - edge-logs:/var/log/psa-edge
     networks: [edge-internal, edge-egress]
     healthcheck:
@@ -106,6 +107,7 @@ services:
     secrets: [app_db_password, data_key]
     volumes:
       - ./config/edge.json:/etc/psa-edge/edge.json:ro
+      - ./config/license.json:/etc/psa-edge/license.json:ro
       - edge-logs:/var/log/psa-edge
     networks: [edge-internal, edge-egress]
 
@@ -120,6 +122,7 @@ services:
     secrets: [inspector_db_password]
     volumes:
       - ./config/edge.json:/etc/psa-edge/edge.json:ro
+      - ./config/license.json:/etc/psa-edge/license.json:ro
       - ./enrollment/enrollment.json:/etc/psa-edge/enrollment.json:ro
       - agent-state:/var/lib/psa-edge-agent
       - edge-logs:/var/log/psa-edge

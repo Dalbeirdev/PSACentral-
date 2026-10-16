@@ -289,8 +289,9 @@ func (s *Server) syncPage(w http.ResponseWriter, r *http.Request, se *session) {
 	_, status, _ := s.connectionID(ctx)
 	suspended, _ := worker.SuspendedIn(ctx, s.Pool)
 	decommissioned := s.lifecycleStatus(ctx)["decommissioned"] == true
+	lic := s.licenseVerification()
 	s.render(w, http.StatusOK, "sync.html", viewData{Title: "Synchronization", Session: se, Notice: noticeFor(r.URL.Query().Get("requested")), Data: map[string]any{
-		"Suspended": suspended, "Decommissioned": decommissioned,
+		"Suspended": suspended, "Decommissioned": decommissioned, "LicenseBlocked": !lic.PSAWorkAllowed, "LicenseState": lic.State, "LicenseDetail": lic.Detail,
 		"Runs": runs, "Pending": pending, "Conflicts24h": conflicts, "LocalOnly": localOnly, "PushFailed": pushFailed, "LastSucceededAt": lastOK, "Watermark": watermark, "Runs24h": runs24, "Failed24h": failed24,
 		"Requested": requested, "ConnectionStatus": status, "Supported": psa.SyncSupported(s.Cfg.PSA.Provider), "Provider": s.Cfg.PSA.Provider, "Interval": s.SyncInterval,
 	}})

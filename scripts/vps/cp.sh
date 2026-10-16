@@ -37,7 +37,10 @@ case "$cmd" in
     step "Building psacc/control-plane-web:$VERSION"
     docker build -f "$ROOT/apps/web/Dockerfile" -t "psacc/control-plane-web:$VERSION" --build-arg "VERSION=$VERSION" "$ROOT"
     step "Building the PSA Edge appliance image $EDGE_REPO:$VERSION (what client packages reference)"
-    docker build -f "$ROOT/apps/edge/Dockerfile" -t "$EDGE_REPO:$VERSION" --build-arg "VERSION=$VERSION" "$ROOT/apps/edge"
+    # Module 16: pin the license verification key (derived from the signing seed in .env) into the image.
+    SEED="$(env_get LICENSE_SIGNING_KEY)"; [ -n "$SEED" ] || { echo "ERROR: LICENSE_SIGNING_KEY missing in .env (re-run scripts/vps/cp-vps-setup.sh or add one)." >&2; exit 1; }
+    PUB="$({ printf '\x30\x2e\x02\x01\x00\x30\x05\x06\x03\x2b\x65\x70\x04\x22\x04\x20'; printf '%s' "$SEED" | base64 -d; } | openssl pkey -inform DER -pubout -outform DER | base64 -w0)"
+    docker build -f "$ROOT/apps/edge/Dockerfile" -t "$EDGE_REPO:$VERSION" --build-arg "VERSION=$VERSION" --build-arg "LICENSE_PUBLIC_KEY=$PUB" "$ROOT/apps/edge"
     docker image ls --format 'table {{.Repository}}\t{{.Tag}}\t{{.Size}}' | grep -E 'control-plane|psa-edge' || true
     ;;
   cert)

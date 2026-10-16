@@ -12,6 +12,7 @@ import { APP_CONFIG, type AppConfig } from '../../config/env.js';
 import { DatabaseService } from '../../database/database.service.js';
 import { HealthService } from '../health/health.service.js';
 import { CommandsService } from '../deployments/commands.service.js';
+import { LicenseTokensService } from '../deployments/license-tokens.service.js';
 import { CsrRejected, PkiService } from './pki.service.js';
 
 /** Single-use enrollment: token + identity + CSR. No client certificate yet. */
@@ -82,6 +83,7 @@ export class AgentGateway implements OnApplicationBootstrap, OnApplicationShutdo
     @Inject(JsonLogger) private readonly logger: JsonLogger,
     @Inject(HealthService) private readonly health: HealthService,
     @Inject(CommandsService) private readonly commands: CommandsService,
+    @Inject(LicenseTokensService) private readonly licenseTokens: LicenseTokensService,
   ) {}
 
   /** Starts in the background and retries, so the API never fails to boot because the gateway cannot start yet (e.g. migrations pending). */
@@ -230,8 +232,11 @@ export class AgentGateway implements OnApplicationBootstrap, OnApplicationShutdo
     const tls = await this.pki.ensure();
     this.logger.log({ msg: 'Agent enrolled', deployment: check.deployment_code, serial: cert.serial }, 'AgentGateway');
     const signing = await this.commands.signingKey();
+    // Module 16: the first renewed license token travels with the certificate.
+    const license = await this.db.tenant({ orgId: done.organization_id!, scopeAll: true }, (q) => this.licenseTokens.renewalFor(q, p.data.deploymentId, p.data.installationId));
     return this.send(res, 201, {
       certificate: cert.pem,
+      license,
       caCertificate: tls.caPem,
       serial: cert.serial,
       notAfter: cert.notAfter.toISOString(),
@@ -252,7 +257,9 @@ export class AgentGateway implements OnApplicationBootstrap, OnApplicationShutdo
     // Module 13: open, unexpired commands ride along (marked delivered); the agent verifies each signature itself.
     const commands = await this.commands.fetchForAgent(fp);
     const signing = await this.commands.signingKey();
-    return this.send(res, 200, { status: 'ok', heartbeatIntervalSeconds: policy.heartbeatIntervalSeconds, serverTime: new Date().toISOString(), commands, commandSigningKey: signing });
+    // Module 16: every heartbeat renews the license token (or says why it cannot).
+    const license = await this.db.tenant({ orgId: who.organization_id, scopeAll: true }, (q) => this.licenseTokens.renewalFor(q, who.deployment_id, null));
+    return this.send(res, 200, { status: 'ok', heartbeatIntervalSeconds: policy.heartbeatIntervalSeconds, serverTime: new Date().toISOString(), commands, commandSigningKey: signing, license });
   }
 
   /** The agent's answer to a command it executed (or staged for the host operator). */

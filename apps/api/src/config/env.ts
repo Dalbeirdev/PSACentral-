@@ -33,6 +33,8 @@ const envSchema = z
     LOGIN_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).max(1000).default(10),
     CSRF_SECRET: base64Key(32, false),
     DATA_ENCRYPTION_KEY: base64Key(32, true),
+    // Module 16: Ed25519 seed that signs appliance license tokens; its public key is pinned in edge images.
+    LICENSE_SIGNING_KEY: base64Key(32, true),
     DATABASE_URL: z.string().regex(/^postgres(ql)?:\/\//, 'must be a postgres:// URL'),
     DB_POOL_MAX: z.coerce.number().int().min(1).max(100).default(10),
     DB_STATEMENT_TIMEOUT_MS: z.coerce.number().int().min(100).max(120_000).default(15_000),
@@ -91,7 +93,7 @@ export interface AppConfig {
     csrfCookieName: string;
   };
   rateLimitPerMinute: number;
-  secrets: { csrfSecret: Buffer; dataEncryptionKey: Buffer };
+  secrets: { csrfSecret: Buffer; dataEncryptionKey: Buffer; licenseSigningKey: Buffer };
   database: { url: string; poolMax: number; statementTimeoutMs: number };
   edge: { imageRepository: string; imageVersion: string; imageDigest: string | null; agentGatewayUrl: string; heartbeatSeconds: number };
   gateway: { enabled: boolean; host: string; port: number; names: string[]; certificateDays: number; enrollPerMinute: number };
@@ -143,6 +145,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
     secrets: {
       csrfSecret: Buffer.from(e.CSRF_SECRET, 'base64'),
       dataEncryptionKey: Buffer.from(e.DATA_ENCRYPTION_KEY, 'base64'),
+      licenseSigningKey: Buffer.from(e.LICENSE_SIGNING_KEY, 'base64'),
     },
     database: { url: e.DATABASE_URL, poolMax: e.DB_POOL_MAX, statementTimeoutMs: e.DB_STATEMENT_TIMEOUT_MS },
     edge: {

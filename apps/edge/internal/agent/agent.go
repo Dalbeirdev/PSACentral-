@@ -24,6 +24,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"psacc.local/edge/internal/config"
 	"psacc.local/edge/internal/inventory"
+	"psacc.local/edge/internal/license"
 	"psacc.local/edge/internal/remote"
 )
 
@@ -38,10 +39,13 @@ type Agent struct {
 	StatusFile string
 	// RemoteDir is the shared directory for remote command requests / results / staged upgrade (Module 13).
 	RemoteDir string
-	Pool      *pgxpool.Pool
-	Version   string
-	Log       *slog.Logger
-	prevCPU   cpuSample
+	// License files (Module 16): the package copy (read-only mount) and the current token kept fresh on the shared volume.
+	LicensePackagePath string
+	LicenseCurrentPath string
+	Pool               *pgxpool.Pool
+	Version            string
+	Log                *slog.Logger
+	prevCPU            cpuSample
 	// lastInventory is the database inventory of the latest collection (drives schema snapshots).
 	lastInventory inventory.Database
 	// restart is set by a restart_service command addressed to the agent itself.
@@ -151,6 +155,8 @@ type EnrollmentStatus struct {
 	DecommissionedAt    *time.Time `json:"decommissionedAt,omitempty"`
 	// Commands: remote command capability (pinned key, queued results, staged upgrade); never secrets.
 	Commands map[string]any `json:"commands,omitempty"`
+	// License: this appliance's verification of its license token (Module 16).
+	License *license.Status `json:"license,omitempty"`
 }
 
 func (a *Agent) Status() EnrollmentStatus {
@@ -183,6 +189,8 @@ func (a *Agent) Status() EnrollmentStatus {
 		}
 	}
 	st.Commands = a.commandsSummary()
+	lic := a.LicenseStatus()
+	st.License = &lic
 	entries, _ := filepath.Glob(filepath.Join(a.OutboxDir, "report-*.json"))
 	st.BufferedReports = len(entries)
 	if len(entries) > 0 {
@@ -242,6 +250,7 @@ func (a *Agent) step(ctx context.Context, interval, backoff time.Duration) time.
 			now := time.Now().UTC()
 			s.LastHeartbeatAt, s.LastError, s.LastErrorAt = &now, "", nil
 			a.pinKey(&s, hb.CommandSigningKey)
+			a.storeLicense(hb.License, "heartbeat")
 		}
 		_ = a.SaveState(s)
 		if err == nil && len(hb.Commands) > 0 {

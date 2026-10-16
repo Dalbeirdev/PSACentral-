@@ -9,6 +9,7 @@ export * from './dashboard.js';
 export * from './deployments.js';
 export * from './health.js';
 export * from './licenses.js';
+export * from './license-tokens.js';
 export * from './database-explorer.js';
 export * from './onboarding.js';
 export * from './permissions.js';

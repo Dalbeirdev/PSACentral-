@@ -2,6 +2,7 @@
 {{with .Data}}
 <h1>Synchronization</h1>
 <p class="lead">The worker mirrors {{.Provider}} tickets into this appliance and pushes local changes back. Every run is recorded here; the Control Plane receives only these counts and statuses.</p>
+{{if .LicenseBlocked}}<div class="alert error" role="alert" data-testid="license-banner"><strong>License token {{.LicenseState}}.</strong> {{.LicenseDetail}} Synchronization is stopped until the Control Plane renews the token.</div>{{end}}
 {{if .Decommissioned}}<div class="alert error" role="alert" data-testid="decommissioned-banner"><strong>Decommissioned by the provider.</strong> Ticket synchronization has stopped for good; tickets and data stay on this host until the operator removes the appliance (<a href="/removal">Removal</a>).</div>{{end}}
 {{if .Suspended}}<div class="alert error" role="alert" data-testid="suspended-banner"><strong>Suspended by the provider.</strong> PSA connection tests and ticket synchronization are paused until the deployment is resumed from the Control Plane. Tickets and this page stay available; nothing was deleted.</div>{{end}}
 {{if not .Supported}}<div class="alert error" role="alert">Ticket synchronization is not implemented for {{.Provider}} in this version. Connection tests work; tickets are not exchanged.</div>{{end}}
@@ -20,7 +21,7 @@
     </dl>
     <form method="post" action="/sync/run">
       <input type="hidden" name="csrf" value="{{$.Session.CSRF}}">
-      <button class="btn" type="submit" {{if or (not .Supported) (ne .ConnectionStatus "verified") .Suspended .Decommissioned}}disabled{{end}}>Sync now</button>
+      <button class="btn" type="submit" {{if or (not .Supported) (ne .ConnectionStatus "verified") .Suspended .Decommissioned .LicenseBlocked}}disabled{{end}}>Sync now</button>
       {{if .Requested}}<span class="pill warn">requested: {{.Requested}}</span>{{end}}
     </form>
     <p class="hint">“Sync now” asks the worker to run within its next tick; the UI itself never calls the PSA.</p>

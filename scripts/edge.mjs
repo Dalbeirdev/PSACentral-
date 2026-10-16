@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { createPrivateKey, createPublicKey } from 'node:crypto';
 import { docker, dockerMode } from './lib/docker.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -14,6 +15,18 @@ const edgeDir = join(root, 'apps', 'edge');
 const GO_IMAGE = 'golang:1.25-alpine';
 const version = process.env.EDGE_VERSION ?? JSON.parse(readFileSync(join(root, 'apps', 'api', 'package.json'), 'utf8')).version;
 const repo = process.env.EDGE_IMAGE_REPOSITORY ?? 'psacc/psa-edge';
+// Module 16: the image pins the Control Plane's license verification key, derived from apps/api/.env.
+function licensePublicKey() {
+  try {
+    const env = readFileSync(join(root, 'apps', 'api', '.env'), 'utf8');
+    const seed = /^LICENSE_SIGNING_KEY=(\S+)/m.exec(env)?.[1];
+    if (!seed) return '';
+    const pkcs8 = Buffer.concat([Buffer.from('302e020100300506032b657004220420', 'hex'), Buffer.from(seed, 'base64')]);
+    return createPublicKey(createPrivateKey({ key: pkcs8, format: 'der', type: 'pkcs8' })).export({ format: 'der', type: 'spki' }).toString('base64');
+  } catch {
+    return '';
+  }
+}
 
 /** Path of apps/edge as the Docker daemon sees it (WSL mounts Windows drives under /mnt). */
 function daemonPath(p) {
@@ -35,7 +48,8 @@ switch (cmd) {
     r = goRun('go vet ./... && go test -count=1 -cover ./...');
     break;
   case 'build':
-    r = docker(['build', '-t', `${repo}:${version}`, '--build-arg', `VERSION=${version}`, daemonPath(edgeDir)]);
+    if (!licensePublicKey()) console.warn('warning: apps/api/.env has no LICENSE_SIGNING_KEY — the image carries no pinned license key (run pnpm setup).');
+    r = docker(['build', '-t', `${repo}:${version}`, '--build-arg', `VERSION=${version}`, '--build-arg', `LICENSE_PUBLIC_KEY=${licensePublicKey()}`, daemonPath(edgeDir)]);
     if (r.status === 0) docker(['image', 'inspect', `${repo}:${version}`, '--format', '{{.Id}} {{.Size}} bytes, user {{.Config.User}}']);
     break;
   case 'export': {

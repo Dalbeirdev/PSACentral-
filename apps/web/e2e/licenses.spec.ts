@@ -58,6 +58,8 @@ test.describe('licenses', () => {
     await expect(page.getByLabel(/Lifecycle:/)).toContainText('Suspended');
     // The simulated agent fetches the signed suspend command and answers it.
     const hb = await heartbeat(a);
+    // Module 16: while suspended the Control Plane renews no license token; the appliance stops PSA work on that answer.
+    expect(hb.body.license).toMatchObject({ state: 'inactive', token: null });
     const cmd = (hb.body.commands as { id: string; type: string; params: Record<string, unknown> }[]).find((c) => c.type === 'suspend')!;
     expect(cmd.params).toEqual({ reason: 'Customer paused the contract' });
     expect((await commandResult(a, cmd.id, { code: 'suspended', message: 'PSA work paused on the appliance; data and the local UI stay available.' })).status).toBe(200);
@@ -74,7 +76,10 @@ test.describe('licenses', () => {
     await page.getByTestId('lifecycle-reason').fill('Contract resumed');
     await page.getByTestId('lifecycle-confirm').click();
     await expect(page.getByTestId('suspend-deployment')).toBeVisible();
-    expect(((await heartbeat(a)).body.commands as { type: string }[]).map((c) => c.type)).toEqual(['resume']);
+    const afterResume = await heartbeat(a);
+    expect((afterResume.body.commands as { type: string }[]).map((c) => c.type)).toEqual(['resume']);
+    expect((afterResume.body.license as { state: string; token: string | null }).state).toBe('active');
+    expect((afterResume.body.license as { token: string | null }).token).toMatch(/^psacc-lic\.v1\./);
     await page.goto(`/deployments/${a.id}/logs`);
     for (const action of ['deployment.suspended', 'deployment.resumed']) await expect(page.getByText(action).first()).toBeVisible();
   });

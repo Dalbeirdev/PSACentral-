@@ -22,8 +22,12 @@ export async function packageFor(app: NestExpressApplication, ops: Client, clien
   const clientId = await inOrgA(async (c) => (await c.query('SELECT id FROM clients WHERE code = $1', [clientCode])).rows[0].id as string);
   const psa = await inOrgA(async (c) => (await c.query(`SELECT id FROM psa_instances WHERE client_id = $1 AND status = 'active' ORDER BY code LIMIT 1`, [clientId])).rows[0].id as string);
   await ensureTestLicense(ops, clientId);
-  const dep = (await ops.post('/deployments', { clientId, psaInstanceId: psa, targetEnvironment: 'local_test', targetOs: 'linux', targetArch: 'amd64' })).body;
-  const pkg = (await ops.post(`/deployments/${dep.id}/packages`, { tokenValidityHours: 1 })).body.currentPackage;
+  const created = await ops.post('/deployments', { clientId, psaInstanceId: psa, targetEnvironment: 'local_test', targetOs: 'linux', targetArch: 'amd64' });
+  if (created.status !== 201) throw new Error(`test deployment not created: ${created.status} ${JSON.stringify(created.body)}`);
+  const dep = created.body;
+  const generated = await ops.post(`/deployments/${dep.id}/packages`, { tokenValidityHours: 1 });
+  if (generated.status !== 201) throw new Error(`test package not generated: ${generated.status} ${JSON.stringify(generated.body)}`);
+  const pkg = generated.body.currentPackage;
   const res = await supertest(app.getHttpServer()).post(`/api/v1/deployments/${dep.id}/packages/${pkg.id}/download`)
     .set('cookie', ops.cookieHeader).set('origin', ORIGIN).set('x-csrf-token', ops.cookies.get('psacc_csrf') ?? '').buffer(true)
     .parse((r, cb) => { const c: Buffer[] = []; r.on('data', (d: Buffer) => c.push(d)); r.on('end', () => cb(null, Buffer.concat(c))); });
@@ -58,8 +62,10 @@ export function gw(port: number, path: string, body: unknown, ca: string, agent?
  * `ops` holds licenses.manage).
  */
 export async function ensureTestLicense(ops: Client, clientId: string): Promise<void> {
-  const existing = (await ops.get(`/licenses?clientId=${clientId}&status=active&pageSize=50`)).body.items as { displayName: string; deploymentsUsed: number; maxDeployments: number }[];
-  if (existing.some((l) => l.displayName === 'Test capacity' && l.deploymentsUsed < l.maxDeployments)) return;
+  const existing = (await ops.get(`/licenses?clientId=${clientId}&status=active&pageSize=50`)).body.items as { displayName: string; deploymentsUsed: number; maxDeployments: number; endsAt: string | null }[];
+  const today = new Date().toISOString().slice(0, 10);
+  // A license whose term a test let end still reads "active" until the hourly sweep; it must not count as capacity.
+  if (existing.some((l) => l.displayName === 'Test capacity' && l.deploymentsUsed < l.maxDeployments && (l.endsAt === null || l.endsAt >= today))) return;
   const r = await ops.post('/licenses', { clientId, displayName: 'Test capacity', startsAt: new Date().toISOString().slice(0, 10), endsAt: null, maxDeployments: 1000 });
   if (r.status !== 201) throw new Error(`test license not created: ${r.status} ${JSON.stringify(r.body)}`);
 }

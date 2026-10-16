@@ -10,6 +10,7 @@ const base = {
   APP_ENV: 'development',
   APP_ALLOWED_ORIGINS: 'http://localhost:3210',
   CSRF_SECRET: Buffer.alloc(32, 1).toString('base64'),
+  LICENSE_SIGNING_KEY: Buffer.alloc(32, 7).toString('base64'),
   DATA_ENCRYPTION_KEY: Buffer.alloc(32, 2).toString('base64'),
   DATABASE_URL: 'postgres://psacc_app:x@127.0.0.1:5432/psacc_dev',
 };

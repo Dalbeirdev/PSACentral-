@@ -51,6 +51,7 @@ type heartbeatResponse struct {
 	HeartbeatIntervalSeconds int             `json:"heartbeatIntervalSeconds"`
 	Commands                 []SignedCommand `json:"commands"`
 	CommandSigningKey        *SigningKey     `json:"commandSigningKey"`
+	License                  *licenseRenewal `json:"license"`
 }
 
 // commandResult is what the agent sends back (@psacc/contracts commandResultSchema).

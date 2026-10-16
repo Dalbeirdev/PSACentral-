@@ -96,6 +96,7 @@ services:
       SESSION_ABSOLUTE_HOURS: "12"
       CSRF_SECRET: ${CSRF_SECRET:?run pnpm cp:setup}
       DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY:?run pnpm cp:setup}
+      LICENSE_SIGNING_KEY: ${LICENSE_SIGNING_KEY:?run pnpm cp:setup}
       DATABASE_URL: postgres://psacc_app:${PSACC_APP_PASSWORD}@postgres:5432/psacc
       DB_POOL_MAX: "20"
       EDGE_IMAGE_REPOSITORY: ${EDGE_IMAGE_REPOSITORY:-psacc/psa-edge}

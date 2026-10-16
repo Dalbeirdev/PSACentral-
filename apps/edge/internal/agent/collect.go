@@ -475,6 +475,8 @@ func (a *Agent) CollectAll(ctx context.Context) []ReportItem {
 		out = append(out, item("certificates_security", map[string]any{
 			"certificateSerial": s.Serial, "certificateNotAfter": s.NotAfter.UTC().Format(time.RFC3339Nano), "daysRemaining": int(time.Until(*s.NotAfter).Hours() / 24),
 			"localAdminFailedLogins24h": failed, "localAdminLocked": locked, "encryptedDiskConfirmed": nil,
+			// Module 16: the appliance's own verification of its license token.
+			"license": a.LicenseStatus(),
 		}))
 	}
 	return out

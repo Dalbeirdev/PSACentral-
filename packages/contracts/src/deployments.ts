@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { type DeploymentLifecycleState, DEPLOYMENT_LIFECYCLE_STATES, type HealthState, HEALTH_STATES, type PsaProviderKey } from './common.js';
 import type { DeploymentLicenseInfo, DeploymentSuspension, LicenseStatus } from './licenses.js';
 import type { DeploymentDecommissionInfo } from './retention.js';
+import type { ApplianceLicenseStatus } from './license-tokens.js';
 import { TARGET_ENVIRONMENTS, type TargetEnvironment } from './onboarding.js';
 
 export const LIFECYCLE_LABELS: Record<DeploymentLifecycleState, string> = {
@@ -160,6 +161,8 @@ export interface DeploymentDetail extends DeploymentSummary {
   suspension: DeploymentSuspension | null;
   /** Set once the deployment is decommissioned (Module 15): why, by whom, what was retired, and the metadata retention. */
   decommission: DeploymentDecommissionInfo | null;
+  /** Module 16: the appliance's last reported verification of its license token (null until it reports). */
+  applianceLicense: ApplianceLicenseStatus | null;
   /** Active licenses of the client the deployment could be bound to (settings). */
   licenseOptions: { id: string; code: string; displayName: string; status: LicenseStatus; endsAt: string | null; deploymentsUsed: number; maxDeployments: number }[];
   installationId: string | null;

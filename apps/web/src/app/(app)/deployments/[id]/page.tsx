@@ -1,4 +1,4 @@
-import type { AuditEventDto, Paged } from '@psacc/contracts';
+import { APPLIANCE_LICENSE_STATE_LABELS, type AuditEventDto, type Paged } from '@psacc/contracts';
 import { Archive, ArrowRight, Cpu, Database, Fingerprint, KeyRound, Plug, Radio } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -126,6 +126,9 @@ export default async function DeploymentOverview({ params, searchParams }: { par
               ['Agent status', d.isSynthetic ? <span key="s" className="italic text-slate-500">Synthetic — not live</span> : d.lifecycleState === 'enrolled' || d.lifecycleState === 'verified' ? 'Enrolled (mutual TLS)' : d.lifecycleState === 'suspended' && d.enrolledAt && d.agentCertificates.some((c) => c.status === 'active') ? 'Enrolled (mutual TLS) — suspended' : d.lifecycleState === 'decommissioned' ? <span key="s" className="font-normal text-slate-700">Identity retired — decommissioned{d.enrolledAt ? '; the appliance no longer reports' : ''}</span> : d.agentCertificates.some((c) => c.status === 'revoked') ? <span key="s" className="font-normal text-red-700">Certificate revoked — re-enroll with a new package</span> : <span key="s" className="font-normal text-slate-500">Not enrolled — no agent has connected</span>],
               ['Last heartbeat', d.isSynthetic ? <span key="h" className="italic text-slate-500">Synthetic — not live</span> : d.lastHeartbeatAt ? <span key="h" title={formatDateTime(d.lastHeartbeatAt, tz)}>{relativeTime(d.lastHeartbeatAt)}</span> : 'Never'],
               ['Agent version', d.agentVersion],
+              ['Appliance license token', d.isSynthetic ? null : d.applianceLicense
+                ? <span key="lt" className={d.applianceLicense.psaWorkAllowed ? 'text-slate-800' : 'font-normal text-red-700'} data-testid="appliance-license">{APPLIANCE_LICENSE_STATE_LABELS[d.applianceLicense.state]}{d.applianceLicense.tokenExpiresAt ? ` · renewed until ${formatDateTime(d.applianceLicense.tokenExpiresAt, tz)}` : ''} · key {d.applianceLicense.keyId ?? 'none'} ({d.applianceLicense.keySource}){d.applianceLicense.psaWorkAllowed ? '' : ' · PSA work stopped on the appliance'}</span>
+                : <span key="lt" className="font-normal text-slate-500">Not reported yet — the appliance verifies its token and reports the result</span>],
               ['Health', <span key="db" className="inline-flex items-center gap-1.5"><Database className="size-3.5 text-slate-400" aria-hidden="true" /><HealthPill state={d.healthState} />{d.healthReason ? <span className="text-[12px] font-normal text-slate-500">{d.healthReason}</span> : null}</span>],
               ['Details', <Link key="hl" href={`/deployments/${id}/health`} className="text-blue-700 hover:underline">Health page: reports, resources, timeline</Link>],
             ]} />

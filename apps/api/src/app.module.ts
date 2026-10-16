@@ -23,8 +23,9 @@ import { CommandsController } from './modules/deployments/commands.controller.js
 import { CommandsService } from './modules/deployments/commands.service.js';
 import { LicensesController } from './modules/deployments/licenses.controller.js';
 import { LicensesService } from './modules/deployments/licenses.service.js';
-import { RetentionController } from './modules/deployments/retention.controller.js';
+import { LicensingKeyController, RetentionController } from './modules/deployments/retention.controller.js';
 import { RetentionService } from './modules/deployments/retention.service.js';
+import { LicenseTokensService } from './modules/deployments/license-tokens.service.js';
 import { AgentGateway } from './modules/agents/agent-gateway.js';
 import { HealthController } from './modules/health/health.controller.js';
 import { HealthService } from './modules/health/health.service.js';
@@ -56,6 +57,7 @@ export const CONTROLLERS = [
   CommandsController,
   LicensesController,
   RetentionController,
+  LicensingKeyController,
   HealthController,
   DatabaseExplorerController,
   AuditController,
@@ -93,6 +95,7 @@ export class AppModule {
         CommandsService,
         LicensesService,
         RetentionService,
+        LicenseTokensService,
         OnboardingService,
         // Guard order matters: rate limit → session → CSRF → permissions (default deny).
         { provide: APP_GUARD, useClass: AppThrottlerGuard },

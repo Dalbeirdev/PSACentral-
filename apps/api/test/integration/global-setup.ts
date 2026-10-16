@@ -6,6 +6,33 @@ import { hashPassword } from '../../src/modules/auth/password.js';
 import { EMAIL, testEnv } from './helpers.js';
 
 /**
+ * Deployment codes in the test database start at DEP-90501. The Docker suites install real packages whose
+ * Compose project (`psacc-dep-nnnnn`) and local admin port (18000 + nnnnn mod 1000) derive from the code; a
+ * developer workstation may run a real appliance from the dev database (small codes, e.g. DEP-00030), and a
+ * colliding project name would let the suites' cleanup remove it. Test codes stay far away from real ones.
+ */
+async function offsetDeploymentCodes(connectionString: string): Promise<void> {
+  const c = new pg.Client({ connectionString });
+  await c.connect();
+  try {
+    // The sequence table is tenant-scoped (FORCE RLS), so each organization is addressed in its own context.
+    const orgs = await c.query<{ id: string }>(`SELECT id FROM organizations`);
+    for (const { id } of orgs.rows) {
+      await c.query('BEGIN');
+      await c.query(`SELECT set_config('app.org_id', $1, true)`, [id]);
+      await c.query(
+        `INSERT INTO organization_sequences (organization_id, name, last_value) VALUES ($1, 'deployment', 90500)
+         ON CONFLICT (organization_id, name) DO UPDATE SET last_value = GREATEST(organization_sequences.last_value, 90500)`,
+        [id],
+      );
+      await c.query('COMMIT');
+    }
+  } finally {
+    await c.end();
+  }
+}
+
+/**
  * Rebuilds the isolated psacc_test database from scratch for every run:
  * drop schema → run all migrations → synthetic seed (org A) → isolation org B.
  */
@@ -27,6 +54,7 @@ export default async function setup() {
   process.env.APP_ENV = 'test';
   await migrate(env.MIGRATION_DATABASE_URL!, () => undefined);
   await seed(env.MIGRATION_DATABASE_URL!, { password: env.SEED_DEFAULT_PASSWORD!, log: () => undefined });
+  await offsetDeploymentCodes(env.MIGRATION_DATABASE_URL!);
 
   // Organization B: a separate tenant with its own admin, client, PSA instance and deployment.
   const c = new pg.Client({ connectionString: env.MIGRATION_DATABASE_URL });

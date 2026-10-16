@@ -2,6 +2,7 @@
 {{with .Data}}
 <h1>Appliance status</h1>
 {{if index .Lifecycle "decommissioned"}}<div class="alert error" role="alert" data-testid="decommissioned-banner"><strong>Decommissioned by the provider</strong> since <span class="mono">{{index .Lifecycle "decommissionedSince"}}</span>. The management identity is retired and this appliance no longer reports to the Control Plane; PSA connection tests and ticket synchronization have stopped. Tickets, data and this administration page stay on this host until the operator removes the appliance — see <a href="/removal">Removal</a>.</div>{{end}}
+{{if not .LicenseCheck.PSAWorkAllowed}}<div class="alert error" role="alert" data-testid="license-banner"><strong>License token {{.LicenseCheck.State}}.</strong> {{.LicenseCheck.Detail}} PSA connection tests and ticket synchronization are stopped until the Control Plane renews the token. Tickets, data and this administration page stay available.</div>{{else if eq .LicenseCheck.State "grace"}}<div class="alert info" role="status" data-testid="license-grace-banner"><strong>License token in its grace period.</strong> {{.LicenseCheck.Detail}}</div>{{end}}
 {{if index .Lifecycle "suspended"}}<div class="alert error" role="alert" data-testid="suspended-banner"><strong>Suspended by the provider</strong> since <span class="mono">{{index .Lifecycle "since"}}</span>{{with index .Lifecycle "reason"}} — {{.}}{{end}}. PSA connection tests and ticket synchronization are paused until the deployment is resumed from the Control Plane. Tickets, data and this administration page stay available; nothing was deleted.</div>{{end}}
 <p class="lead">{{index .Deployment "client"}} · deployment <span class="mono">{{index .Deployment "code"}}</span> · installation <span class="mono">{{index .Deployment "installationId"}}</span></p>
 <div class="grid">
@@ -34,6 +35,7 @@
       <div><dt>Detail</dt><dd>{{index .Enrollment "detail"}}</dd></div>
       <div><dt>Last backup</dt><dd>{{index .Backup "lastStatus"}}</dd></div>
       <div><dt>License</dt><dd>{{with .License}}<span class="mono">{{index . "code"}}</span> · {{index . "displayName"}}{{with index . "endsAt"}} · until {{.}}{{end}}{{else}}<span class="hint">not in this package</span>{{end}}</dd></div>
+      <div><dt>License token</dt><dd data-testid="license-state">{{if .LicenseCheck.PSAWorkAllowed}}<span class="pill ok">{{.LicenseCheck.State}}</span>{{else}}<span class="pill err">{{.LicenseCheck.State}}</span>{{end}}{{with .LicenseCheck.TokenExpiresAt}} · until {{.}}{{end}} · key {{with .LicenseCheck.KeyID}}{{.}}{{else}}none{{end}} ({{.LicenseCheck.KeySource}})</dd></div>
       <div><dt>Lifecycle</dt><dd>{{if index .Lifecycle "decommissioned"}}<span class="pill err">decommissioned</span>{{else if index .Lifecycle "suspended"}}<span class="pill err">suspended</span>{{else}}<span class="pill ok">active</span>{{end}}</dd></div>
     </dl>
   </section>

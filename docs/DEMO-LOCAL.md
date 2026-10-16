@@ -66,6 +66,9 @@ needs real credentials, so for a demo without them the appliance shows *not conf
 - Operations: signed remote commands (refresh, PSA test, sync, restart, certificate rotation).
 - Licenses, suspension (Overview → *Suspend deployment*) and the final decommissioning page.
 
+Screenshots from a rehearsal of this guide on this workstation (first-run page, dashboard overview and
+health of the demo appliance) are in `docs/reports/demo-local/`.
+
 ## 5. Day-to-day on this machine
 
 From Command Prompt: `psa-edge.cmd status DEP-00030`, `stop DEP-00030`, `wipe DEP-00030` (same folder). From PowerShell:
@@ -79,11 +82,33 @@ From Command Prompt: `psa-edge.cmd status DEP-00030`, `stop DEP-00030`, `wipe DE
 Decommission or remove the deployment in the dashboard when the demo is over; wiping the appliance
 alone does not retire its identity on the Control Plane.
 
+The automated test suites may run on this machine while the demo appliance exists: their appliances use
+deployment codes from DEP-90501 (Compose projects `psacc-dep-905nn`, ports 18501+), and they refuse to
+install over a Compose project that already exists, so `psacc-dep-00030` is never touched.
+
 ## If something is off
 
 - *Not enrolled* after a few minutes: check `apps/api/.env` → `AGENT_GATEWAY_URL` must carry this
   machine's current address (`wsl -- ip -4 route get 1.1.1.1`); the workstation's address changes
   between networks. Fix it, restart the API, and run the install helper again (idempotent).
+- An *enrolled* appliance stops heartbeating after the workstation changed networks (its agent log says
+  `heartbeat failed … context deadline exceeded` against the old address): fix `AGENT_GATEWAY_URL` as
+  above, restart the API (it reissues the gateway certificate for the new address), then point the
+  appliance at it and restart its agent (the address is kept in `config/edge.json` and in the enrollment file; replace both addresses and the deployment code):
+
+  ```powershell
+  wsl -u root -- sh -c "sed -i 's#https://10.0.0.1:8443#https://10.0.0.2:8443#' /opt/psa-edge/psacc-dep-00030/config/edge.json /opt/psa-edge/psacc-dep-00030/enrollment/enrollment.json && cd /opt/psa-edge/psacc-dep-00030 && docker compose restart edge-agent"
+  ```
+
+  The next heartbeat (15 s) brings it back to *Enrolled*; nothing else changes.
+- Forgotten local admin password: the appliance has no reset page on purpose. Remove the account
+  from the host and run the first-run setup again (tickets, PSA credentials and the enrollment stay):
+
+  ```powershell
+  wsl -u root -- bash "/mnt/e/PSA COntrole center/scripts/edge/reset-local-admin.sh" DEP-00030
+  ```
+
+  Then open `http://localhost:18030/setup` and create the administrator.
 - *Token expired*: generate a new package in the dashboard (the old one is revoked) and install it.
 - Port 18nnn busy: set `EDGE_LOCAL_ADMIN_PORT` in `/opt/psa-edge/psacc-dep-nnnnn/.env` and re-run
   the helper.

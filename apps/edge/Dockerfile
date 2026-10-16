@@ -5,6 +5,8 @@
 
 FROM golang:1.25-alpine AS build
 ARG VERSION=0.0.0-dev
+# Module 16: base64 SPKI of the Control Plane's license verification key, pinned into the binary.
+ARG LICENSE_PUBLIC_KEY=
 WORKDIR /src
 ENV CGO_ENABLED=0 GOFLAGS=-trimpath
 COPY go.mod go.sum ./
@@ -12,7 +14,7 @@ RUN go mod download && go mod verify
 COPY . .
 RUN go vet ./... \
  && go test ./... \
- && go build -ldflags "-s -w -X main.Version=${VERSION}" -o /out/bin/psa-edge ./cmd/psa-edge \
+ && go build -ldflags "-s -w -X main.Version=${VERSION} -X psacc.local/edge/internal/license.EmbeddedPublicKeyB64=${LICENSE_PUBLIC_KEY}" -o /out/bin/psa-edge ./cmd/psa-edge \
  && cd /out/bin && for c in edge-migrate edge-api edge-worker edge-agent; do ln -s psa-edge "$c"; done \
  && mkdir -p /out/var/log/psa-edge /out/var/backups/psa-edge /out/var/lib/psa-edge-agent /out/etc/psa-edge
 

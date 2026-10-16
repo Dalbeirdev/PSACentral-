@@ -27,6 +27,7 @@ In every environment it also refuses to start when `CSRF_SECRET` is shorter than
 |---|---|---|
 | `CSRF_SECRET` | HMAC for CSRF tokens | Rotate any time. Users must reload their open pages. |
 | `DATA_ENCRYPTION_KEY` | AES-256-GCM for MFA seeds (later: PSA credential references) | Envelope is versioned (`v1.`). Rotation requires re-encryption (backlog SEC-KMS). |
+| `LICENSE_SIGNING_KEY` | Ed25519 seed signing appliance license tokens (Module 16); its public key is pinned into edge images | Rotate together with an image roll-out (runbook §11) |
 | `psacc_app` password | API database login | Standard DB credential rotation |
 | `psacc_owner` password | migrations only | Standard DB credential rotation; not present on API hosts in production |
 | `POSTGRES_PASSWORD` | dev container bootstrap | Local only |

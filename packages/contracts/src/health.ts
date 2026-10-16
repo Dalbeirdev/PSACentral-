@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { applianceLicenseStatusSchema } from './license-tokens.js';
 import { type HealthState, HEALTH_STATES } from './common.js';
 
 /**
@@ -215,6 +216,8 @@ export const certificatesSecurityReportSchema = z.strictObject({
   localAdminLocked: z.boolean(),
   /** The agent cannot confirm host disk encryption from inside a container. */
   encryptedDiskConfirmed: z.boolean().nullable(),
+  /** Module 16: the appliance's own verification of its license token (absent from agents older than 0.1.0 + Module 16). */
+  license: applianceLicenseStatusSchema.optional(),
 });
 
 export const REPORT_SCHEMAS = {

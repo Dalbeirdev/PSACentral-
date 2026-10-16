@@ -83,6 +83,7 @@ switch (cmd) {
       `PSACC_APP_PASSWORD=${hex(24)}`,
       `CSRF_SECRET=${b64(32)}`,
       `DATA_ENCRYPTION_KEY=${b64(32)}`,
+      `LICENSE_SIGNING_KEY=${b64(32)}`,
       'BOOTSTRAP_ORG_NAME=PSA Control Center',
       'BOOTSTRAP_ORG_SLUG=control-plane',
       'BOOTSTRAP_ADMIN_EMAIL=admin@control-plane.local',

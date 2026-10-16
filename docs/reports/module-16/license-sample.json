@@ -1,0 +1,57 @@
+{
+  "deployment": "DEP-00032",
+  "client": "CL-00007",
+  "license": "LIC-00030",
+  "controlPlaneKeyId": "c625318ad1b069b7",
+  "steps": [
+    {
+      "step": "installed",
+      "applianceLicense": {
+        "keyId": "c625318ad1b069b7",
+        "state": "valid",
+        "detail": "License LIC-00030; token renewed by the Control Plane, valid until 2026-11-15T10:30:06Z.",
+        "keySource": "image",
+        "verifiedAt": "2026-10-16T10:30:07Z",
+        "licenseCode": "LIC-00030",
+        "licenseEndsAt": null,
+        "psaWorkAllowed": true,
+        "tokenExpiresAt": "2026-11-15T10:30:06Z"
+      },
+      "agentKeyId": "c625318ad1b069b7",
+      "keySource": "image"
+    },
+    {
+      "step": "license-suspended",
+      "applianceLicense": {
+        "keyId": "c625318ad1b069b7",
+        "state": "revoked",
+        "detail": "The Control Plane reported the license as inactive: License LIC-00030 is suspended.",
+        "keySource": "image",
+        "verifiedAt": "2026-10-16T10:30:22Z",
+        "licenseCode": null,
+        "licenseEndsAt": null,
+        "psaWorkAllowed": false,
+        "tokenExpiresAt": null
+      },
+      "findings": [
+        "license_inactive",
+        "backup_none",
+        "appliance_license_revoked"
+      ]
+    },
+    {
+      "step": "license-resumed",
+      "applianceLicense": {
+        "keyId": "c625318ad1b069b7",
+        "state": "valid",
+        "detail": "License LIC-00030; token renewed by the Control Plane, valid until 2026-11-15T10:30:37Z.",
+        "keySource": "image",
+        "verifiedAt": "2026-10-16T10:30:37Z",
+        "licenseCode": "LIC-00030",
+        "licenseEndsAt": null,
+        "psaWorkAllowed": true,
+        "tokenExpiresAt": "2026-11-15T10:30:37Z"
+      }
+    }
+  ]
+}

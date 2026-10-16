@@ -16,6 +16,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"psacc.local/edge/internal/config"
+	"psacc.local/edge/internal/license"
 	"psacc.local/edge/internal/psa"
 	"psacc.local/edge/internal/redact"
 	"psacc.local/edge/internal/remote"
@@ -36,6 +37,10 @@ type Worker struct {
 	SyncInterval time.Duration
 	// RemoteDir is the shared directory the agent uses to hand over remote commands (empty disables it).
 	RemoteDir string
+	// License files (Module 16): the package copy and the current token the agent keeps fresh.
+	LicensePackagePath string
+	LicenseCurrentPath string
+	licenseState       string
 
 	mu          sync.Mutex
 	lastSync    time.Time
@@ -79,6 +84,19 @@ func (w *Worker) Tick(ctx context.Context) (string, error) {
 	suspended, _ := w.Suspended(ctx)
 	if dec, _ := DecommissionedIn(ctx, w.Pool); dec {
 		suspended = true // Module 15: a decommissioned appliance runs no PSA work either
+	}
+	// Module 16: no PSA work without a valid (or grace-period) license token; the state change is logged once.
+	lic := w.License()
+	if lic.State != w.licenseState {
+		if lic.PSAWorkAllowed {
+			w.logEntry(ctx, "info", "License token "+lic.State+": "+lic.Detail)
+		} else {
+			w.logEntry(ctx, "warn", "License token "+lic.State+": "+lic.Detail+" PSA connection tests and ticket synchronization are stopped until the Control Plane renews the token.")
+		}
+		w.licenseState = lic.State
+	}
+	if !lic.PSAWorkAllowed {
+		suspended = true
 	}
 	if w.Tester != nil && complete && !suspended {
 		interval := w.TestInterval
@@ -316,6 +334,18 @@ func (w *Worker) setDecommissioned(ctx context.Context, detail string) error {
 	v := time.Now().UTC().Format(time.RFC3339) + "|" + redact.Text(detail, 200)
 	_, err := w.Pool.Exec(ctx, `INSERT INTO app_metadata (key, value) VALUES ('service.decommissioned', $1) ON CONFLICT (key) DO NOTHING`, v)
 	return err
+}
+
+// License evaluates the appliance's license token (Module 16).
+func (w *Worker) License() license.Status {
+	pkg, cur := w.LicensePackagePath, w.LicenseCurrentPath
+	if pkg == "" {
+		pkg = "/etc/psa-edge/license.json"
+	}
+	if cur == "" {
+		cur = "/var/log/psa-edge/license/current.json"
+	}
+	return license.Current(pkg, cur, w.Cfg.Deployment.ID, w.Cfg.Deployment.InstallationID, time.Now())
 }
 
 // ErrRestartRequested: a remote restart_service command asked the worker to exit (exit status 0).

@@ -23,6 +23,9 @@ export interface PackageInput {
   };
   client: { id: string; code: string; displayName: string };
   license: { id: string; code: string; displayName: string; endsAt: string | null } | null;
+  /** Module 16: the signed license token bound to this installation (null when no license is bound), and the verification key. */
+  licenseToken: string | null;
+  licenseKey: { keyId: string; publicKeyPem: string };
   psa: {
     instanceId: string;
     code: string;
@@ -193,6 +196,10 @@ export function buildPackage(input: PackageInput): BuiltPackage {
     ['compose.production.yaml', render(template('compose.production.yaml'), vars), 0o644, false],
     ['config/edge.json', `${JSON.stringify(config, null, 2)}\n`, 0o644, false],
     ['config/edge.env.template', render(template('edge.env.template'), vars), 0o644, false],
+    ['config/license.json', `${JSON.stringify({
+      schemaVersion: 1, token: input.licenseToken, keyId: input.licenseKey.keyId, publicKeyPem: input.licenseKey.publicKeyPem,
+      note: 'Signed license token bound to this installation; renewed over every heartbeat. The appliance verifies it with the key pinned in its image (this copy serves images built without one) and stops PSA work without a valid token.',
+    }, null, 2)}\n`, 0o644, false],
     ['enrollment/enrollment.json', `${JSON.stringify(enrollment, null, 2)}\n`, 0o600, true],
     ['scripts/install.sh', render(template('install.sh'), vars), 0o755, false],
     ['scripts/verify.sh', render(template('verify.sh'), vars), 0o755, false],

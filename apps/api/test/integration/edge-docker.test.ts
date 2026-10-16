@@ -144,6 +144,12 @@ async function download(c: Client, path: string): Promise<Buffer> {
   return res.body as Buffer;
 }
 const toUnix = (p: string) => (WSL ? shSync(`wslpath -a '${p}'`).out : p);
+/** Never install over a Compose project that already exists on this engine: it could be a real appliance (its cleanup would remove it). */
+async function refuseExistingProject(project: string): Promise<void> {
+  const containers = (await sh(`docker ps -aq --filter label=com.docker.compose.project=${project} | wc -l`)).out.trim();
+  const volumes = (await sh(`docker volume ls -q --filter label=com.docker.compose.project=${project} | wc -l`)).out.trim();
+  if (containers !== '0' || volumes !== '0') throw new Error(`refusing to install ${project}: a Compose project with that name already exists on this engine (${containers} containers, ${volumes} volumes)`);
+}
 const dc = (i: Inst, args: string, timeout?: number) => sh(`cd ${i.dir} && docker compose -f compose.yaml ${args}`, timeout);
 const ownerSql = (i: Inst, sql: string) =>
   dc(i, `exec -T edge-postgres sh -c 'PGPASSWORD="$(cat /run/secrets/postgres_owner_password)" psql -h 127.0.0.1 -U psa_edge_owner -d psa_edge -v ON_ERROR_STOP=1 -qtAX' <<'SQL'\n${sql}\nSQL`);
@@ -214,6 +220,7 @@ describe.skipIf(!ready)('two client appliances installed from generated packages
       writeFileSync(file, await download(ops, `/deployments/${dep.id}/packages/${p.id}/download`));
       const project = `psacc-${dep.code.toLowerCase()}`;
       const dir = `${work}/${project}-x/${project}`;
+      await refuseExistingProject(project);
       expect((await sh(`mkdir -p ${work}/${project}-x && cd ${work}/${project}-x && unzip -q "${toUnix(file)}"`)).code).toBe(0);
       const cfg = JSON.parse((await sh(`cat ${dir}/config/edge.json`)).out);
       inst.push({ id: dep.id, code: dep.code, project, dir, provider, port: 18000 + (Number(dep.code.replace(/\D/g, '')) % 1000),
@@ -783,6 +790,60 @@ ${events}
     expect(r.code).not.toBe(0);
     expect(r.err + r.out).toMatch(/this database belongs to deployment/);
   }, 180_000);
+
+  it('license tokens (Module 16): the real appliance verifies its token with the key pinned in the image; a suspended license stops PSA work within a heartbeat and resuming restores it; a tampered token is refused until renewed', async () => {
+    const a = inst[0]!;
+    const base = `http://127.0.0.1:${a.port}`;
+    // Pinned key: the image was built with the Control Plane's license key, and the package carries a token for this installation.
+    const st0 = await agentStatus(a);
+    expect(st0.license, JSON.stringify(st0.license)).toMatchObject({ state: 'valid', keySource: 'image', psaWorkAllowed: true });
+    const keyInfo = (await ops.get('/settings/licensing-key')).body;
+    expect(st0.license.keyId).toBe(keyInfo.keyId);
+    expect((await sh(`cat ${a.dir}/config/license.json`)).out).toContain(`"keyId": "${keyInfo.keyId}"`);
+    const dash0 = (await http(a, `${base}/`)).body;
+    expect(dash0).toContain('data-testid="license-state"');
+    expect(dash0).not.toContain('license-banner');
+    // The verdict reaches the Control Plane in the security report.
+    await waitFor(async () => (await detail(a)).applianceLicense?.state === 'valid', 90_000, `${a.code} reports its license verdict`);
+    expect((await detail(a)).applianceLicense).toMatchObject({ keySource: 'image', keyId: keyInfo.keyId });
+
+    // Suspend the license on the Control Plane: the next heartbeat answers inactive; the appliance stops PSA work.
+    const licId = (await detail(a)).licenseDetail.id;
+    expect((await ops.post(`/licenses/${licId}/suspend`, { reason: 'Invoice overdue' })).status).toBe(200);
+    await waitFor(async () => (await agentStatus(a)).license?.state === 'revoked', 90_000, `${a.code} agent sees the inactive license`);
+    const runsBefore = Number((await ownerSql(a, `SELECT count(*) FROM sync_runs`)).out);
+    await waitFor(async () => (await ownerSql(a, `SELECT count(*) FROM integration_logs WHERE message LIKE 'License token revoked%'`)).out !== '0', 60_000, `${a.code} worker logged the stop`);
+    const dash1 = (await http(a, `${base}/`)).body;
+    expect(dash1).toContain('data-testid="license-banner"');
+    expect(dash1).toContain('is suspended'); // the Control Plane states the license status, not the operator's internal reason
+    expect((await http(a, `${base}/sync`)).body).toMatch(/<button class="btn" type="submit" disabled>Sync now<\/button>/);
+    // A "Sync now" request stays unconsumed for a full worker tick; tickets and data stay.
+    const csrf = /name="csrf" value="([^"]+)"/.exec((await http(a, `${base}/credentials`)).body)![1]!;
+    expect((await http(a, `-X POST --data-urlencode csrf=${csrf} ${base}/sync/run`)).status).toBe(303);
+    await new Promise((r) => setTimeout(r, 40_000));
+    expect(Number((await ownerSql(a, `SELECT count(*) FROM sync_runs`)).out)).toBe(runsBefore);
+    expect((await http(a, `${base}/tickets`)).status).toBe(200);
+    // Centrally: the health carries the appliance's verdict, and heartbeats continue.
+    await waitFor(async () => (await detail(a)).applianceLicense?.state === 'revoked', 90_000, `${a.code} reported revoked`);
+    expect((await ops.get(`/deployments/${a.id}/health`)).body.findings.map((f: { code: string }) => f.code)).toContain('appliance_license_revoked');
+
+    // Resume the license: the next heartbeat carries a token again; PSA work resumes (the pending Sync now runs).
+    expect((await ops.post(`/licenses/${licId}/resume`, { reason: 'Paid' })).status).toBe(200);
+    await waitFor(async () => (await agentStatus(a)).license?.state === 'valid', 90_000, `${a.code} token renewed`);
+    await waitFor(async () => Number((await ownerSql(a, `SELECT count(*) FROM sync_runs`)).out) > runsBefore, 120_000, `${a.code} synchronization resumed`);
+    expect((await http(a, `${base}/`)).body).not.toContain('license-banner');
+
+    // Tampering with the stored token on the host is detected at once and healed by the next renewal. The edge image
+    // carries no shell, so the shared volume is edited from a throw-away container (in place, keeping the file's owner).
+    const logs = `${a.project}_edge-logs`;
+    const current = (await sh(`docker run --rm -v ${logs}:/l:ro postgres:17-alpine cat /l/license/current.json`)).out;
+    expect(current).toContain('"token": "psacc-lic.v1.');
+    const tampered = current.replace(/"token": "psacc-lic\.v1\.([A-Za-z0-9_-])/, (_, c) => `"token": "psacc-lic.v1.${c === 'A' ? 'B' : 'A'}`);
+    expect(tampered).not.toBe(current);
+    expect((await sh(`docker run --rm -i -v ${logs}:/l postgres:17-alpine sh -c 'cat > /l/license/current.json' <<'EOF'\n${tampered}\nEOF`)).code).toBe(0);
+    expect((await agentStatus(a)).license.state).toBe('invalid');
+    await waitFor(async () => (await agentStatus(a)).license?.state === 'valid', 90_000, `${a.code} renewal replaced the tampered token`);
+  }, 900_000);
 
   it('decommissioning (Module 15): the Control Plane retires the identity; the real appliance stops reporting and PSA work, keeps its data and shows the removal page; the host-side wipe removes everything; the record can then be removed', async () => {
     const a = inst[0]!;

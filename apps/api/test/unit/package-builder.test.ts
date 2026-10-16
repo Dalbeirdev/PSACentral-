@@ -22,6 +22,9 @@ const input = (over: Partial<PackageInput> = {}): PackageInput => ({
   agentGatewayUrl: 'https://gateway.example.test',
   ca: { pem: '-----BEGIN CERTIFICATE-----\nTESTCA\n-----END CERTIFICATE-----\n', fingerprint: 'ab'.repeat(32) },
   heartbeatSeconds: 60,
+  // Module 16: a (test) signed license token and the verification key the package ships.
+  licenseToken: 'psacc-lic.v1.eyJ2IjoxfQ.' + 'A'.repeat(86),
+  licenseKey: { keyId: '0123456789abcdef', publicKeyPem: ['-----BEGIN PUBLIC KEY-----', 'MCowBQYDK2VwAyEAtestkeytestkeytestkeytestkeytestkeytestkey=', '-----END PUBLIC KEY-----', ''].join('\n') },
   token: TOKEN,
   tokenExpiresAt: new Date('2026-10-15T12:00:00Z'),
   ...over,
@@ -58,7 +61,7 @@ describe('deployment package', () => {
   it('contains every required file under one folder, with matching manifest, checksums and SHA-256', () => {
     expect(Object.keys(files).sort()).toEqual([
       'CHECKSUMS.sha256', 'INSTALL.md', 'README.md', 'UNINSTALL.md', 'compose.production.yaml', 'compose.yaml', 'config/edge.env.template',
-      'config/edge.json', 'enrollment/enrollment.json', 'manifest.json', 'scripts/edge-backup.sh', 'scripts/install.ps1', 'scripts/install.sh', 'scripts/uninstall.ps1', 'scripts/uninstall.sh', 'scripts/upgrade.ps1', 'scripts/upgrade.sh', 'scripts/verify.ps1', 'scripts/verify.sh',
+      'config/edge.json', 'config/license.json', 'enrollment/enrollment.json', 'manifest.json', 'scripts/edge-backup.sh', 'scripts/install.ps1', 'scripts/install.sh', 'scripts/uninstall.ps1', 'scripts/uninstall.sh', 'scripts/upgrade.ps1', 'scripts/upgrade.sh', 'scripts/verify.ps1', 'scripts/verify.sh',
     ].map((p) => root + p).sort());
     expect(built.fileName).toBe('psacc-dep-00042-package-2.zip');
     expect(built.sha256).toBe(sha(built.archive));
@@ -165,6 +168,12 @@ describe('deployment package', () => {
     expect(text('INSTALL.md')).toContain('2026-10-15T12:00:00.000Z');
     expect(text('INSTALL.md')).toContain('- API secret (secret)');
     expect(text('UNINSTALL.md')).toContain('scripts/uninstall.sh --wipe --confirm DEP-00042');
+    // Module 16: the package carries the signed license token and the verification key, and mounts the file into every appliance service.
+    const lic = JSON.parse(text('config/license.json'));
+    expect(lic).toMatchObject({ schemaVersion: 1, keyId: '0123456789abcdef' });
+    expect(lic.token).toMatch(/^psacc-lic\.v1\./);
+    expect(lic.publicKeyPem).toContain('BEGIN PUBLIC KEY');
+    expect((text('compose.yaml').match(/config\/license\.json:\/etc\/psa-edge\/license\.json:ro/g) ?? []).length).toBe(3);
     expect(strFromU8(new Uint8Array(files[`${root}README.md`]!))).toContain('Help Desk, Endpoint Management');
   });
 });
