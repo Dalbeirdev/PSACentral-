@@ -1,0 +1,33 @@
+
+ RUN  v5.0.4 E:/PSA COntrole center/packages/contracts
+
+ ✓ src/contracts.test.ts > permission catalog > every system role only references known permissions 6ms
+ ✓ src/contracts.test.ts > permission catalog > super_admin holds every permission; read_only holds no write/manage permission 1ms
+ ✓ src/contracts.test.ts > permission catalog > read_only and auditor cannot change deployments 0ms
+ ✓ src/contracts.test.ts > permission catalog > technician is limited to assigned clients; administrators see all clients 0ms
+ ✓ src/contracts.test.ts > permission catalog > role permission lists contain no duplicates 0ms
+ ✓ src/contracts.test.ts > validation schemas > normalizes login email and rejects unknown keys 2ms
+ ✓ src/contracts.test.ts > validation schemas > password policy flags short, repeated and email-derived passwords 1ms
+ ✓ src/contracts.test.ts > validation schemas > list query enforces bounds and sort syntax 2ms
+ ✓ src/contracts.test.ts > validation schemas > user create requires roles and rejects duplicates 3ms
+ ✓ src/psa.test.ts > provider descriptors > every provider has auth methods, config fields and unique keys 4ms
+ ✓ src/psa.test.ts > provider descriptors > the flat catalog is derived from the descriptors 1ms
+ ✓ src/psa.test.ts > buildConfigSchema > applies defaults, coerces numbers, drops blanks and hidden fields 4ms
+ ✓ src/psa.test.ts > buildConfigSchema > enforces conditional required fields, ranges, patterns, https and unknown keys 2ms
+ ✓ src/psa.test.ts > buildConfigSchema > visibility follows showWhen 0ms
+ ✓ src/psa.test.ts > buildConfigSchema > real provider schemas accept their documented examples 5ms
+ ✓ src/psa.test.ts > instance create schema > requires a client and a known provider and defaults services to none 3ms
+ ✓ src/clients.test.ts > client schemas > normalizes optional blanks to undefined and validates references, countries, time zones and websites 31ms
+ ✓ src/clients.test.ts > client schemas > requires exactly one primary contact and unique emails 4ms
+ ✓ src/clients.test.ts > client schemas > rejects contract end before start and phone numbers that are not numbers 4ms
+ ✓ src/clients.test.ts > client schemas > uses friendly messages for missing fields 0ms
+ ✓ src/clients.test.ts > onboarding step schemas > has a schema for every data step 0ms
+ ✓ src/clients.test.ts > onboarding step schemas > PSA step carries provider config only; the endpoint is derived by the adapter, credentials are never accepted 2ms
+ ✓ src/clients.test.ts > onboarding step schemas > deployment OS must match fixed-OS environments 2ms
+ ✓ src/clients.test.ts > onboarding step schemas > default catalog: Help Desk is the only default; the 7 required PSA providers are present 1ms
+
+ Test Files  3 passed (3)
+      Tests  24 passed (24)
+   Start at  16:27:19
+   Duration  415ms (import 67%, transform 18%, tests 13%, worker 2%)
+

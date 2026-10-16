@@ -1,0 +1,75 @@
+{{define "head"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Title}} · PSA Edge {{.Cfg.Deployment.Code}}</title>
+<style>
+  :root { --blue:#2563EB; --cyan:#06B6D4; --green:#10B981; --amber:#F59E0B; --red:#EF4444; --bg:#F5F8FF; --ink:#0F172A; --muted:#64748B; --line:#E2E8F0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: var(--bg); }
+  header { background: #fff; border-bottom: 1px solid var(--line); }
+  .bar { max-width: 1040px; margin: 0 auto; padding: 14px 20px; display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .brand { display: flex; gap: 10px; align-items: center; font-weight: 650; }
+  .logo { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, var(--blue), var(--cyan)); }
+  .brand small { display: block; font-weight: 500; color: var(--muted); font-size: 12px; }
+  nav a, nav button { color: var(--ink); text-decoration: none; font-weight: 550; margin-left: 14px; font-size: 14px; background: none; border: 0; cursor: pointer; padding: 0; font-family: inherit; }
+  nav a:hover, nav button:hover { color: var(--blue); }
+  main { max-width: 1040px; margin: 0 auto; padding: 28px 20px 48px; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .lead { color: var(--muted); margin: 0 0 22px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; margin-bottom: 16px; box-shadow: 0 1px 2px rgb(15 23 42 / 0.04); }
+  .card h2 { font-size: 16px; margin: 0 0 12px; }
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  dl { margin: 0; } dl div { display: flex; justify-content: space-between; gap: 16px; padding: 7px 0; border-bottom: 1px solid #F1F5F9; }
+  dl div:last-child { border: 0; } dt { color: var(--muted); } dd { margin: 0; text-align: right; font-weight: 550; overflow-wrap: anywhere; }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 14px 0 6px; }
+  input[type=text], input[type=password] { display: block; width: 100%; max-width: 420px; height: 40px; border: 1px solid #CBD5E1; border-radius: 9px; padding: 0 12px; font: inherit; }
+  input:focus, textarea:focus { outline: 3px solid rgb(37 99 235 / 0.2); border-color: var(--blue); }
+  textarea { display: block; width: 100%; max-width: 640px; border: 1px solid #CBD5E1; border-radius: 9px; padding: 8px 12px; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  label.inline { display: inline; font-weight: 500; margin-left: 8px; }
+  .pill.err { background: #FEE2E2; color: #991B1B; }
+  .filters { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; } .filters label { margin: 0 0 4px; } .filters input, .filters select { max-width: 260px; }
+  .filters .btn { margin-top: 0; } .btn.secondary { background: #fff; color: var(--ink); border: 1px solid #CBD5E1; } .btn.secondary:hover { background: #F8FAFC; } .btn[disabled] { opacity: .5; cursor: not-allowed; }
+  select { display: block; height: 40px; border: 1px solid #CBD5E1; border-radius: 9px; padding: 0 12px; font: inherit; background: #fff; min-width: 180px; }
+  .pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .notice { border: 1px solid #FDE68A; background: #FFFBEB; border-radius: 8px; padding: 10px 12px; margin: 8px 0 12px; }
+  .notice pre { margin: 6px 0; padding: 6px 10px; background: #fff; border: 1px solid var(--line); border-radius: 6px; }
+  .alert.ok { background: #ECFDF5; border-color: #A7F3D0; color: #064E3B; }
+  .alert.error { background: #FEF2F2; border-color: #FECACA; color: #7F1D1D; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; } th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid #F1F5F9; vertical-align: top; } th { color: var(--muted); font-weight: 600; }
+  .btn { display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 9px; border: 0; background: var(--blue); color: #fff; font: 600 14px system-ui, sans-serif; cursor: pointer; margin-top: 18px; }
+  .btn:hover { background: #1D4ED8; }
+  .alert { border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; border: 1px solid; }
+  .alert.error { background: #FEF2F2; border-color: #FECACA; color: #991B1B; }
+  .alert.ok { background: #ECFDF5; border-color: #A7F3D0; color: #065F46; }
+  .alert.info { background: #EFF6FF; border-color: #BFDBFE; color: #1E3A8A; }
+  .pill { display: inline-block; border-radius: 6px; padding: 1px 8px; font-size: 12px; font-weight: 600; border: 1px solid; }
+  .pill.ok { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
+  .pill.warn { background: #FFFBEB; color: #92400E; border-color: #FDE68A; }
+  .pill.off { background: #F8FAFC; color: var(--muted); border-color: var(--line); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; } th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid #F1F5F9; } th { color: var(--muted); font-weight: 600; }
+  .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 13px; }
+  .hint { color: var(--muted); font-size: 13px; }
+  .narrow { max-width: 520px; }
+  .scroll { overflow-x: auto; }
+</style>
+</head>
+<body>
+<header><div class="bar">
+  <div class="brand"><span class="logo" aria-hidden="true"></span><span>PSA Edge appliance<small>{{.Cfg.Deployment.Code}} · {{.Cfg.Client.DisplayName}} · local administration</small></span></div>
+  {{if .Session}}<nav aria-label="Appliance">
+    <a href="/">Status</a><a href="/tickets">Tickets</a><a href="/sync">Synchronization</a><a href="/credentials">PSA credentials</a><a href="/removal">Removal</a>
+    <form method="post" action="/logout" style="display:inline"><input type="hidden" name="csrf" value="{{.Session.CSRF}}"><button type="submit">Sign out {{.Session.Username}}</button></form>
+  </nav>{{end}}
+</div></header>
+<main>
+{{if .Error}}<div class="alert error" role="alert">{{.Error}}</div>{{end}}
+{{if .Notice}}<div class="alert ok" role="status">{{.Notice}}</div>{{end}}
+{{end}}
+
+{{define "foot"}}
+<p class="hint">PSA Edge {{.Version}} · This page is served on this host only. Ticket data and PSA credentials stay in this appliance’s own database.</p>
+</main>
+</body>
+</html>{{end}}

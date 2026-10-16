@@ -1,0 +1,9 @@
+$ psql (as the database owner, on the appliance)
+2026-10-15 06:55:03.916167+00|manual|succeeded|4|0|0|1|
+2026-10-15 06:55:33.91126+00|manual|succeeded|0|3|0|1|
+--- tickets
+1003 | closed | low | psa | synced
+1001 | pending | high | psa | synced
+1002 | pending | normal | psa | synced
+1004 | open | critical | psa | synced
+new-1 | new | normal | portal | synced

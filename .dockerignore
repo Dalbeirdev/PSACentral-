@@ -1,0 +1,21 @@
+# Build context for the Control Plane images (apps/api/Dockerfile, apps/web/Dockerfile).
+# Only sources are sent; dependencies are installed and built inside the image.
+**/node_modules
+**/.next
+**/dist
+**/out
+**/coverage
+**/*.tsbuildinfo
+**/test-results
+**/playwright-report
+**/.env
+**/.env.*
+!**/.env.example
+.git
+docs
+infra
+apps/edge
+apps/web/scripts
+apps/api/test
+apps/web/e2e
+apps/web/playwright.config.ts

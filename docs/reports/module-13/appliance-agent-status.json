@@ -1,0 +1,13 @@
+{
+  "allowed": [
+    "refresh_health",
+    "restart_service",
+    "rotate_certificate",
+    "run_sync",
+    "test_psa_connection",
+    "upgrade"
+  ],
+  "resultsWaiting": 0,
+  "signingKeyId": "a4d9773a1cb56cc8",
+  "signingKeyPinned": true
+}

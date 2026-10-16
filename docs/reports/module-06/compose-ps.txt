@@ -1,0 +1,7 @@
+$ docker compose ps
+SERVICE         STATE     <no value>   PORTS
+edge-agent      running                8480/tcp
+edge-api        running   healthy      127.0.0.1:18028->8480/tcp
+edge-backup     running                5432/tcp
+edge-postgres   running   healthy      5432/tcp
+edge-worker     running                8480/tcp

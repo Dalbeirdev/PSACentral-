@@ -1,0 +1,299 @@
+
+ RUN  v5.0.4 E:/PSA COntrole center/apps/api
+
+ ✓ |unit| test/unit/security-primitives.test.ts > TOTP (RFC 6238 / RFC 4226) > matches the RFC 6238 vector at T=59 2ms
+ ✓ |unit| test/unit/security-primitives.test.ts > TOTP (RFC 6238 / RFC 4226) > matches the RFC 6238 vector at T=1111111109 0ms
+ ✓ |unit| test/unit/security-primitives.test.ts > TOTP (RFC 6238 / RFC 4226) > matches the RFC 6238 vector at T=1111111111 0ms
+ ✓ |unit| test/unit/security-primitives.test.ts > TOTP (RFC 6238 / RFC 4226) > matches the RFC 6238 vector at T=1234567890 0ms
+ ✓ |unit| test/unit/security-primitives.test.ts > TOTP (RFC 6238 / RFC 4226) > matches the RFC 6238 vector at T=2000000000 0ms
+ ✓ |unit| test/unit/security-primitives.test.ts > TOTP (RFC 6238 / RFC 4226) > matches the RFC 6238 vector at T=20000000000 0ms
+ ✓ |unit| test/unit/security-primitives.test.ts > TOTP (RFC 6238 / RFC 4226) > matches RFC 4226 HOTP vectors 1ms
+ ✓ |unit| test/unit/security-primitives.test.ts > TOTP (RFC 6238 / RFC 4226) > accepts ±1 step, rejects ±2 steps, and returns the matched step 1ms
+ ✓ |unit| test/unit/security-primitives.test.ts > TOTP (RFC 6238 / RFC 4226) > round-trips base32 and builds a standards-compliant otpauth URI 1ms
+ ✓ |unit| test/unit/security-primitives.test.ts > TOTP (RFC 6238 / RFC 4226) > generates unique recovery codes and hashes them case/format-insensitively 2ms
+ ✓ |unit| test/unit/health-rules.test.ts > health rules engine > a deployment that has not enrolled is unknown 3ms
+ ✓ |unit| test/unit/health-rules.test.ts > health rules engine > a heartbeat alone never makes a deployment healthy 0ms
+ ✓ |unit| test/unit/health-rules.test.ts > health rules engine > goes offline when the heartbeat is older than the policy threshold, regardless of reports 0ms
+ ✓ |unit| test/unit/health-rules.test.ts > health rules engine > is healthy only with a fresh database report that says the database is available 0ms
+ ✓ |unit| test/unit/health-rules.test.ts > health rules engine > resource thresholds: warning → degraded, critical → critical; unmeasured values are ignored 0ms
+ ✓ |unit| test/unit/health-rules.test.ts > health rules engine > service checks: edge-api or the database down is critical; a stale worker is degraded; the agent itself is ignored 0ms
+ ✓ |unit| test/unit/health-rules.test.ts > health rules engine > backups, certificates, PSA and sync feed degraded; info findings never change the state 0ms
+ ✓ |unit| test/unit/health-rules.test.ts > health rules engine > synchronization outcomes: failed degrades, partial and conflicts are informational (Module 12) 0ms
+ ✓ |unit| test/unit/health-rules.test.ts > health rules engine > lifecycle and licensing are facts beside the measured health: suspension and expiring licenses inform, an inactive license degrades (Module 14) 0ms
+ ✓ |unit| test/unit/health-rules.test.ts > health rules engine > a decommissioned deployment is unknown with a single finding, whatever reports it once sent (Module 15) 0ms
+ ✓ |unit| test/unit/health-rules.test.ts > health rules engine > a failed PSA connection test on the appliance is a degraded finding naming the code and HTTP status (Module 11) 0ms
+ ✓ |unit| test/unit/package-builder.test.ts > template rendering > fills {{name}} placeholders, leaves Go templates alone and refuses unknown variables 2ms
+ ✓ |unit| test/unit/package-builder.test.ts > template rendering > flattens text so names cannot break out of comments or table cells 0ms
+ ✓ |unit| test/unit/package-builder.test.ts > template rendering > gives each deployment a stable local admin port 0ms
+ ✓ |unit| test/unit/package-builder.test.ts > deployment package > contains every required file under one folder, with matching manifest, checksums and SHA-256 2ms
+ ✓ |unit| test/unit/package-builder.test.ts > deployment package > leaves no unrendered placeholder in any file 1ms
+ ✓ |unit| test/unit/package-builder.test.ts > deployment package > puts the single-use token in enrollment/enrollment.json only, and no permanent secret anywhere 2ms
+ ✓ |unit| test/unit/package-builder.test.ts > deployment package > writes the non-secret appliance configuration with the PSA settings, services and allowed reports 1ms
+ ✓ |unit| test/unit/package-builder.test.ts > deployment package > isolates the Compose project, keeps the database off the network and binds the admin UI to loopback 0ms
+ ✓ |unit| test/unit/package-builder.test.ts > deployment package > production overrides require a pinned image until a signed digest is published, then default to it 6ms
+ ✓ |unit| test/unit/package-builder.test.ts > deployment package > uses LF and exec bits for shell scripts, CRLF and a BOM for PowerShell, 0600 for the token file 1ms
+ ✓ |unit| test/unit/package-builder.test.ts > deployment package > the verify script checks for every required edge table 0ms
+ ✓ |unit| test/unit/package-builder.test.ts > deployment package > documents what the package is (not an image), the token expiry and the credential fields 0ms
+ ✓ |unit| test/unit/database-pool.test.ts > database pool > survives a server-side connection termination (logged, not fatal) 3ms
+ ✓ |unit| test/unit/security-primitives.test.ts > password hashing (scrypt) > verifies the right password and rejects the wrong one 823ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > PSA adapter registry > has exactly one adapter per catalog provider 2ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > PSA adapter registry > rejects unknown providers and duplicate registrations 2ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > PSA adapter registry > control-plane adapters are configuration-only: no connection method and no network access 5ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > endpoint derivation > autotask → api_user 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > endpoint derivation > autotask → api_user 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > endpoint derivation > connectwise → api_member_keys 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > endpoint derivation > connectwise → api_member_keys 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > endpoint derivation > halopsa → oauth2_client_credentials 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > endpoint derivation > kaseya_bms → username_password 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > endpoint derivation > freshservice → api_key 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > endpoint derivation > servicenow → basic 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > endpoint derivation > custom_rest → api_key 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > endpoint derivation > applies defaults and drops fields hidden by conditions 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > configuration validation > autotask api_user {} → error at config.zone 1ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > configuration validation > autotask api_user { zone: 'custom' } → error at config.customZoneUrl 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > configuration validation > autotask api_user { zone: 'custom', …(1) } → error at config.customZoneUrl 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > configuration validation > autotask api_user { zone: 'webservices1', …(1) } → error at config.defaultQueueId 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > configuration validation > connectwise api_member_keys { site: 'mars', companyId: 'acme' } → error at config.site 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > configuration validation > connectwise api_member_keys { site: 'onprem', companyId: 'acme' } → error at config.onPremHost 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > configuration validation > connectwise api_member_keys { site: 'na', companyId: 'bad id!' } → error at config.companyId 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > configuration validation > halopsa oauth2_client_credentials { tenantUrl: 'http://acme.halopsa.com' } → error at config.tenantUrl 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > configuration validation > halopsa oauth2_client_credentials { …(1) } → error at config.tenantUrl 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > configuration validation > freshservice api_key { …(1) } → error at config.domain 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > configuration validation > servicenow basic { …(1) } → error at config.instanceUrl 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > configuration validation > custom_rest oauth2_client_credentials { baseUrl: 'https://psa.acme.com' } → error at config.tokenUrl 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > configuration validation > custom_rest api_key { …(2) } → error at config.ticketsPath 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > configuration validation > rejects an authentication method the provider does not support 0ms
+ ✓ |unit| test/unit/psa-adapters.test.ts > configuration validation > never accepts credential fields inside configuration 0ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > environment configuration > loads development defaults with insecure-transport cookie names 5ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > environment configuration > uses __Host- cookies and Secure in production 1ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > environment configuration > refuses unsafe production configuration 0 2ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > environment configuration > refuses unsafe production configuration 1 0ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > environment configuration > refuses unsafe production configuration 2 0ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > environment configuration > refuses unsafe production configuration 3 0ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > environment configuration > refuses unsafe production configuration 4 0ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > environment configuration > refuses unsafe production configuration 5 0ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > environment configuration > refuses unsafe production configuration 6 0ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > environment configuration > rejects weak or malformed secrets 1ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > authorization declarations (default deny) > every route declares @Public, @AuthenticatedOnly or @RequirePermissions 1ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > authorization declarations (default deny) > only health, system info and login are public 0ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > dashboard timeline pivot > zero-fills missing states and keeps empty days 0ms
+ ✓ |unit| test/unit/security-primitives.test.ts > password hashing (scrypt) > uses a unique salt per hash 543ms
+ ✓ |unit| test/unit/security-primitives.test.ts > password hashing (scrypt) > rejects malformed or abusive encodings without throwing 0ms
+ ✓ |unit| test/unit/security-primitives.test.ts > password hashing (scrypt) > generates policy-compliant temporary passwords 0ms
+ ✓ |unit| test/unit/security-primitives.test.ts > SecretBox (AES-256-GCM envelope) > round-trips and never contains the plaintext 1ms
+ ✓ |unit| test/unit/security-primitives.test.ts > SecretBox (AES-256-GCM envelope) > fails when the ciphertext is bound to a different row (associated data) 1ms
+ ✓ |unit| test/unit/security-primitives.test.ts > SecretBox (AES-256-GCM envelope) > fails on tampering and with a different key 0ms
+ ✓ |unit| test/unit/security-primitives.test.ts > SecretBox (AES-256-GCM envelope) > safeEqual compares correctly 0ms
+ ✓ |unit| test/unit/security-primitives.test.ts > log secret masking > redacts sensitive keys recursively and connection-string passwords 1ms
+ ✓ |integration| test/integration/edge-docker.test.ts > two client appliances installed from generated packages, enrolled over mTLS, on a real Docker Engine > each agent enrolled with its single-use token; verify.sh passes all 13 checks 8897ms
+ ✓ |integration| test/integration/edge-docker.test.ts > two client appliances installed from generated packages, enrolled over mTLS, on a real Docker Engine > heartbeats arrive over mutual TLS and move the deployment’s last-seen time 16301ms
+ ✓ |integration| test/integration/edge-docker.test.ts > two client appliances installed from generated packages, enrolled over mTLS, on a real Docker Engine > real reports make each deployment healthy and verified; the Control Plane holds only measured metadata 169ms
+ ✓ |integration| test/integration/edge-docker.test.ts > two client appliances installed from generated packages, enrolled over mTLS, on a real Docker Engine > database initialized once with the 14 tables, this deployment’s identity and its own PSA and services 9899ms
+ ✓ |integration| test/integration/edge-docker.test.ts > two client appliances installed from generated packages, enrolled over mTLS, on a real Docker Engine > least privilege: the inspector reads only the catalog; the application cannot rewrite audit or logs 3190ms
+ ✓ |integration| test/integration/edge-docker.test.ts > two client appliances installed from generated packages, enrolled over mTLS, on a real Docker Engine > local admin UI: loopback only, first-run setup, CSRF, and credentials encrypted with the host key 3124ms
+ ✓ |integration| test/integration/edge-docker.test.ts > two client appliances installed from generated packages, enrolled over mTLS, on a real Docker Engine > PSA connection test runs on the appliance against the (fake) PSA over TLS with a private CA; the Control Plane only learns the outcome 33605ms
+ ✓ |integration| test/integration/edge-docker.test.ts > two client appliances installed from generated packages, enrolled over mTLS, on a real Docker Engine > ticket synchronization: the appliance mirrors the (fake) PSA, pushes local changes back, keeps conflicts, and the Control Plane sees counts only 117965ms
+ ✓ |integration| test/integration/edge-docker.test.ts > two client appliances installed from generated packages, enrolled over mTLS, on a real Docker Engine > remote commands: signed by the Control Plane, pulled and verified by the agent, executed on the appliance (refresh, PSA test, sync, restart, certificate rotation), and an upgrade staged, applied on the host and reported 110269ms
+ ✓ |integration| test/integration/edge-docker.test.ts > two client appliances installed from generated packages, enrolled over mTLS, on a real Docker Engine > lifecycle: suspending the deployment pauses PSA work on the real appliance (signed command), keeps data and the local UI, blocks packages and commands centrally; resuming restores everything 83158ms
+ ✓ |integration| test/integration/edge-docker.test.ts > two client appliances installed from generated packages, enrolled over mTLS, on a real Docker Engine > reports stay metadata-only in the local outbox; the backup service makes a verified backup 3444ms
+ ✓ |integration| test/integration/edge-docker.test.ts > two client appliances installed from generated packages, enrolled over mTLS, on a real Docker Engine > certificate renewal: a new certificate for the same installation; the old one is retired 14739ms
+ ✓ |integration| test/integration/edge-docker.test.ts > two client appliances installed from generated packages, enrolled over mTLS, on a real Docker Engine > Control Plane outage: the appliance keeps working locally; heartbeats resume when the gateway returns 30301ms
+ ✓ |integration| test/integration/edge-docker.test.ts > two client appliances installed from generated packages, enrolled over mTLS, on a real Docker Engine > identity and data survive down/up; health degrades while the database is stopped and recovers after real checks 51879ms
+ ✓ |integration| test/integration/edge-docker.test.ts > two client appliances installed from generated packages, enrolled over mTLS, on a real Docker Engine > revocation: the gateway refuses the certificate; replaying the used token is refused too 13926ms
+ ✓ |integration| test/integration/edge-docker.test.ts > two client appliances installed from generated packages, enrolled over mTLS, on a real Docker Engine > a package refuses to run against a database that belongs to another deployment 1835ms
+ ✓ |integration| test/integration/edge-docker.test.ts > two client appliances installed from generated packages, enrolled over mTLS, on a real Docker Engine > decommissioning (Module 15): the Control Plane retires the identity; the real appliance stops reporting and PSA work, keeps its data and shows the removal page; the host-side wipe removes everything; the record can then be removed 66618ms
+ ✓ |integration| test/integration/package-docker.test.ts > generated packages on a real Docker Engine > checksums verify, scripts parse, and file modes survive extraction on Linux 610ms
+ ✓ |integration| test/integration/package-docker.test.ts > generated packages on a real Docker Engine > Compose accepts the development configuration; production refuses unpinned images and accepts pinned ones 4129ms
+ ✓ |integration| test/integration/package-docker.test.ts > generated packages on a real Docker Engine > install.sh --prepare creates host-only secrets (0700 dir) and .env, idempotently 4382ms
+ ✓ |integration| test/integration/package-docker.test.ts > generated packages on a real Docker Engine > each package runs its own PostgreSQL: separate project, volume and internal network, no published port 21176ms
+ ✓ |integration| test/integration/package-docker.test.ts > generated packages on a real Docker Engine > data lives in the volume: it survives a container restart and a down/up 15676ms
+ ✓ |integration| test/integration/auth.test.ts > public endpoints > liveness and readiness report a migrated, reachable database 44ms
+ ✓ |integration| test/integration/auth.test.ts > public endpoints > system info exposes only non-sensitive fields 3ms
+ ✓ |integration| test/integration/auth.test.ts > public endpoints > sets security headers and no-store on API responses 3ms
+ ✓ |integration| test/integration/auth.test.ts > sign-in > rejects requests without a session (default deny) with problem+json 3ms
+ ✓ |integration| test/integration/auth.test.ts > sign-in > returns the same generic error for a wrong password and an unknown account 729ms
+ ✓ |integration| test/integration/auth.test.ts > sign-in > validates input and rejects unknown fields 4ms
+ ✓ |integration| test/integration/auth.test.ts > sign-in > issues an HttpOnly SameSite session cookie and a readable CSRF cookie; stores only the token hash 333ms
+ ✓ |integration| test/integration/auth.test.ts > sign-in > /auth/me never leaks password hashes, MFA secrets or token hashes 264ms
+ ✓ |integration| test/integration/auth.test.ts > sign-in > logout revokes the session server-side 272ms
+ ✓ |integration| test/integration/auth.test.ts > sign-in > expired sessions are rejected 300ms
+ ✓ |integration| test/integration/auth.test.ts > sign-in > records successful and failed sign-ins in the audit trail 275ms
+ ✓ |integration| test/integration/auth.test.ts > account lockout > locks after 5 failures, refuses even the correct password, and audits the lock 2141ms
+ ✓ |integration| test/integration/auth.test.ts > CSRF protection > rejects state-changing requests without the CSRF header 270ms
+ ✓ |integration| test/integration/auth.test.ts > CSRF protection > rejects a CSRF token from another session 528ms
+ ✓ |integration| test/integration/auth.test.ts > CSRF protection > rejects cross-origin requests, including login 286ms
+ ✓ |integration| test/integration/auth.test.ts > rate limiting > returns 429 after the per-IP login limit 761ms
+ ✓ |integration| test/integration/auth.test.ts > multi-factor authentication > enrolls TOTP: wrong code is rejected (and audited), correct code enables MFA and rotates the session 1363ms
+ ✓ |integration| test/integration/auth.test.ts > multi-factor authentication > requires the second factor at sign-in; pending sessions cannot reach business endpoints 264ms
+ ✓ |integration| test/integration/auth.test.ts > multi-factor authentication > rejects a replayed TOTP code 24996ms
+ ✓ |integration| test/integration/auth.test.ts > multi-factor authentication > accepts a recovery code exactly once 521ms
+ ✓ |integration| test/integration/auth.test.ts > multi-factor authentication > revokes the pending session after 5 wrong codes 304ms
+ ✓ |integration| test/integration/auth.test.ts > forced password change & MFA-required policy > admin-created users get a temporary password and must change it; weak passwords are refused 1704ms
+ ✓ |integration| test/integration/auth.test.ts > forced password change & MFA-required policy > with AUTH_MFA_REQUIRED, users without MFA can only reach enrollment 351ms
+ ✓ |integration| test/integration/auth.test.ts > forced password change & MFA-required policy > rejects an invalid time zone on profile update 283ms
+ ✓ |integration| test/integration/deployments.test.ts > deployment records > creates a draft deployment for a client with validation and RBAC 1656ms
+ ✓ |integration| test/integration/deployments.test.ts > deployment records > lists with server-side search, filters, sort and lifecycle stats 689ms
+ ✓ |integration| test/integration/deployments.test.ts > deployment records > settings change only while no package exists, with optimistic concurrency 1038ms
+ ✓ |integration| test/integration/deployments.test.ts > package generation > validates the client, PSA instance and services first, and refuses synthetic records 931ms
+ ✓ |integration| test/integration/deployments.test.ts > package generation > generates a package: installation identity, single-use token stored only as a hash, encrypted archive, audit 776ms
+ ✓ |integration| test/integration/deployments.test.ts > package generation > download: ZIP with matching SHA-256, recorded per download, lifecycle moves to downloaded (not installed) 772ms
+ ✓ |integration| test/integration/deployments.test.ts > package generation > regenerating requires confirmation, supersedes the old package and revokes its token 757ms
+ ✓ |integration| test/integration/deployments.test.ts > package generation > revoke needs a reason, kills the token, purges the archive and returns the deployment to draft 716ms
+ ✓ |integration| test/integration/deployments.test.ts > package generation > expired tokens: the package expires, its archive is purged, the deployment returns to draft (system audit) 837ms
+ ✓ |integration| test/integration/deployments.test.ts > package generation > the periodic sweep expires packages across organizations without leaking tenant context 805ms
+ ✓ |integration| test/integration/deployments.test.ts > package permissions and isolation > read-only and auditors see metadata but cannot generate, download or revoke 1268ms
+ ✓ |integration| test/integration/deployments.test.ts > package permissions and isolation > technicians generate and download only for their assigned clients 1432ms
+ ✓ |integration| test/integration/deployments.test.ts > package permissions and isolation > organization B cannot see, generate, download or revoke organization A packages; RLS fails closed 1015ms
+ ✓ |integration| test/integration/deployments.test.ts > package permissions and isolation > database rules: one usable package and one open token per deployment, at most 72 h, downloads append-only 863ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > quinn.viewer@psacc.test GET /users → 403 319ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > quinn.viewer@psacc.test GET /audit-events → 403 258ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > quinn.viewer@psacc.test GET /roles → 403 270ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > quinn.viewer@psacc.test GET /system/status → 403 264ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > riley.technician@psacc.test GET /users → 403 260ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > riley.technician@psacc.test GET /audit-events → 403 258ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > casey.service@psacc.test GET /audit-events → 403 262ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > taylor.audit@psacc.test GET /audit-events → 200 272ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > taylor.audit@psacc.test GET /users → 200 267ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > sam.security@psacc.test GET /audit-events → 200 313ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > jordan.ops@psacc.test GET /users → 200 276ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > morgan.tech@psacc.test GET /users → 403 258ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > read-only and auditor users cannot create users (and the denial is audited) 773ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > every role can read the dashboard 2394ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > an Operations Administrator cannot grant Super Administrator or modify a Super Administrator 595ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > nobody can change their own roles or status 314ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > role changes take effect immediately and revoke the target user’s sessions 1567ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > disabling a user blocks sign-in and ends their sessions 1017ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > validates user administration input 792ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > supports server-side search, filtering, sorting and pagination of users 277ms
+ ✓ |integration| test/integration/rbac.test.ts > client scope (technicians see assigned clients only) > technician dashboard and search are limited to the 4 assigned clients 707ms
+ ✓ |integration| test/integration/clients.test.ts > client directory > paginates, sorts and counts on the server 389ms
+ ✓ |integration| test/integration/clients.test.ts > client directory > searches name, legal name, reference, code and city; filters by status, country, PSA and health 316ms
+ ✓ |integration| test/integration/clients.test.ts > client directory > summaries include PSA providers, deployment health and account manager 262ms
+ ✓ |integration| test/integration/clients.test.ts > client directory > rejects invalid filters and sort fields 272ms
+ ✓ |integration| test/integration/clients.test.ts > client directory > technicians only see assigned clients, including on direct access 381ms
+ ✓ |integration| test/integration/clients.test.ts > client detail & update > returns management info, the primary contact, counts and a version token 303ms
+ ✓ |integration| test/integration/clients.test.ts > client detail & update > read-only users and technicians cannot edit 878ms
+ ✓ |integration| test/integration/clients.test.ts > client detail & update > updates fields, records a diff in the client activity, and returns a new version 356ms
+ ✓ |integration| test/integration/clients.test.ts > client detail & update > rejects a stale version (optimistic concurrency) with 409 371ms
+ ✓ |integration| test/integration/clients.test.ts > client detail & update > enforces unique client references per organization, case-insensitively 365ms
+ ✓ |integration| test/integration/clients.test.ts > client detail & update > validates { company: [Object] } → error at company.website 325ms
+ ✓ |integration| test/integration/clients.test.ts > client detail & update > validates { company: { countryCode: 'XX' } } → error at company.countryCode 331ms
+ ✓ |integration| test/integration/clients.test.ts > client detail & update > validates { company: [Object] } → error at company.timezone 300ms
+ ✓ |integration| test/integration/clients.test.ts > client detail & update > validates { company: [Object] } → error at company.businessType 324ms
+ ✓ |integration| test/integration/clients.test.ts > client detail & update > validates { management: [Object] } → error at management.contractEndDate 313ms
+ ✓ |integration| test/integration/clients.test.ts > client detail & update > validates { management: [Object] } → error at management.accountManagerUserId 326ms
+ ✓ |integration| test/integration/clients.test.ts > client contacts > adds a contact; marking it primary demotes the previous primary 363ms
+ ✓ |integration| test/integration/clients.test.ts > client contacts > protects the primary contact and rejects duplicate emails 374ms
+ ✓ |integration| test/integration/clients.test.ts > client contacts > validates contact input 292ms
+ ✓ |integration| test/integration/clients.test.ts > client contacts > contacts are protected by row-level security 50ms
+ ✓ |integration| test/integration/clients.test.ts > services > serves the database-driven catalog with Help Desk as the default 271ms
+ ✓ |integration| test/integration/clients.test.ts > services > assigns services to a client and audits the change 330ms
+ ✓ |integration| test/integration/clients.test.ts > services > rejects unknown services and services from another organization 347ms
+ ✓ |integration| test/integration/clients.test.ts > technician client assignments > an administrator changes which clients a technician can see 1691ms
+ ✓ |integration| test/integration/clients.test.ts > cross-organization access > organization B cannot read or modify organization A clients 331ms
+ ✓ |integration| test/integration/clients.test.ts > last Super Administrator protection > a custom role with roles.manage cannot disable or demote the only active Super Administrator 1605ms
+ ✓ |integration| test/integration/onboarding.test.ts > onboarding permissions > quinn.viewer@psacc.test cannot start an onboarding 261ms
+ ✓ |integration| test/integration/onboarding.test.ts > onboarding permissions > riley.technician@psacc.test cannot start an onboarding 272ms
+ ✓ |integration| test/integration/onboarding.test.ts > onboarding permissions > taylor.audit@psacc.test cannot start an onboarding 257ms
+ ✓ |integration| test/integration/onboarding.test.ts > onboarding permissions > morgan.tech@psacc.test cannot start an onboarding 268ms
+ ✓ |integration| test/integration/onboarding.test.ts > onboarding permissions > a Service Manager can prepare a draft but cannot create PSA/deployment records 650ms
+ ✓ |integration| test/integration/onboarding.test.ts > draft persistence & validation > saves steps server-side and resumes from the next step 547ms
+ ✓ |integration| test/integration/onboarding.test.ts > draft persistence & validation > returns field-level errors with paths 269ms
+ ✓ |integration| test/integration/onboarding.test.ts > draft persistence & validation > rejects stale versions (two tabs) with 409 274ms
+ ✓ |integration| test/integration/onboarding.test.ts > draft persistence & validation > checks the client reference against existing clients at step 1 278ms
+ ✓ |integration| test/integration/onboarding.test.ts > draft persistence & validation > enforces step order and provider-specific rules; changing provider clears the PSA configuration 367ms
+ ✓ |integration| test/integration/onboarding.test.ts > draft persistence & validation > validates services and deployment preferences 304ms
+ ✓ |integration| test/integration/onboarding.test.ts > draft persistence & validation > cannot complete until every section is saved 286ms
+ ✓ |integration| test/integration/onboarding.test.ts > completing an onboarding (Test Client A profile: Autotask; Help Desk + Endpoint Management) > atomically creates client, contacts, PSA instance, services and a draft deployment 461ms
+ ✓ |integration| test/integration/onboarding.test.ts > completing an onboarding (Test Client A profile: Autotask; Help Desk + Endpoint Management) > is idempotent and locks the draft afterwards 395ms
+ ✓ |integration| test/integration/onboarding.test.ts > completing an onboarding (Test Client A profile: Autotask; Help Desk + Endpoint Management) > two drafts with the same reference: the second completion is refused 509ms
+ ✓ |integration| test/integration/onboarding.test.ts > completing an onboarding (Test Client A profile: Autotask; Help Desk + Endpoint Management) > abandoned drafts are kept but cannot be completed 349ms
+ ✓ |integration| test/integration/onboarding.test.ts > completing an onboarding (Test Client A profile: Autotask; Help Desk + Endpoint Management) > Test Client B profile (ConnectWise; Help Desk + Security Monitoring) gets independent records 444ms
+ ✓ |integration| test/integration/onboarding.test.ts > onboarding isolation > organization B cannot see or use organization A drafts 737ms
+ ✓ |integration| test/integration/psa.test.ts > PSA providers > exposes the 7 provider descriptors with config fields, auth methods (labels only) and honest adapter status 381ms
+ ✓ |integration| test/integration/psa.test.ts > PSA providers > validates a configuration and previews the endpoint without storing anything 352ms
+ ✓ |integration| test/integration/psa.test.ts > PSA instances > lists, searches, filters and sorts on the server, scoped to the caller 731ms
+ ✓ |integration| test/integration/psa.test.ts > PSA instances > detail includes config, enabled services, deployments and no secrets 353ms
+ ✓ |integration| test/integration/psa.test.ts > PSA instances > creates an instance through the provider adapter; read-only users and technicians cannot 1459ms
+ ✓ |integration| test/integration/psa.test.ts > PSA instances > validates provider configuration, auth method, client and services 420ms
+ ✓ |integration| test/integration/psa.test.ts > PSA instances > updates with optimistic concurrency; changing the endpoint resets connectivity to untested and is audited 353ms
+ ✓ |integration| test/integration/psa.test.ts > PSA instances > read-only users, technicians, service managers and auditors cannot edit an instance 1520ms
+ ✓ |integration| test/integration/psa.test.ts > PSA instances > connectivity cannot be marked verified without a real test (database constraint) 61ms
+ ✓ |integration| test/integration/psa.test.ts > deployment association > moves a deployment between PSA instances of the same client; refuses other clients and disabled instances 574ms
+ ✓ |integration| test/integration/psa.test.ts > deployment association > read-only users cannot change associations 348ms
+ ✓ |integration| test/integration/psa.test.ts > PSA isolation > organization B cannot see, configure or bind organization A instances 779ms
+ ✓ |integration| test/integration/gateway.test.ts > agent gateway: enrollment with the single-use token > packages pin the platform CA, and the gateway presents a certificate that chains to it 327ms
+ ✓ |integration| test/integration/gateway.test.ts > agent gateway: enrollment with the single-use token > refuses unknown, malformed and mismatched requests, and audits rejections of a known token 296ms
+ ✓ |integration| test/integration/gateway.test.ts > agent gateway: enrollment with the single-use token > issues a client certificate, consumes the token, registers the installation and marks the deployment enrolled 243ms
+ ✓ |integration| test/integration/gateway.test.ts > agent gateway: enrollment with the single-use token > two concurrent enrollments with one token: exactly one certificate is issued 249ms
+ ✓ |integration| test/integration/gateway.test.ts > agent gateway: enrollment with the single-use token > expired and revoked tokens are refused 433ms
+ ✓ |integration| test/integration/gateway.test.ts > agent gateway: certificate-authenticated communication > heartbeats need a platform-issued certificate and update the deployment 336ms
+ ✓ |integration| test/integration/gateway.test.ts > agent gateway: certificate-authenticated communication > renewal issues a new certificate and retires the old one 265ms
+ ✓ |integration| test/integration/gateway.test.ts > agent gateway: certificate-authenticated communication > revocation is immediate, and the deployment can re-enroll only with a new package 555ms
+ ✓ |integration| test/integration/gateway.test.ts > agent gateway: certificate-authenticated communication > organization B cannot see another organization’s agent certificates; the table fails closed 485ms
+ ✓ |integration| test/integration/gateway.test.ts > agent gateway: certificate-authenticated communication > authenticated agents are rate limited per certificate identity, not per address (fleets behind NAT) 1866ms
+ ✓ |integration| test/integration/gateway.test.ts > agent gateway: certificate-authenticated communication > enrollment attempts are rate limited per address 191ms
+ ✓ |integration| test/integration/services.test.ts > service catalog (Module 4) > lists the database-driven catalog with usage counts and filters on the server 415ms
+ ✓ |integration| test/integration/services.test.ts > service catalog (Module 4) > creates, updates (optimistic version, immutable key) and audits a service; validation refuses secrets and inconsistent PSA flags 352ms
+ ✓ |integration| test/integration/services.test.ts > service catalog (Module 4) > assignment enforces configuration requirements; values flow into the deployment readiness and package configuration 458ms
+ ✓ |integration| test/integration/services.test.ts > service catalog (Module 4) > deactivation keeps assignments but refuses new ones; defaults cannot be deactivated; reactivation works 498ms
+ ✓ |integration| test/integration/services.test.ts > service catalog (Module 4) > categories: create, rename/reorder with version, delete only when empty; services need an existing category 420ms
+ ✓ |integration| test/integration/services.test.ts > service catalog (Module 4) > RBAC: read-only roles see the catalog but cannot change it; only services.write roles can 2248ms
+ ✓ |integration| test/integration/services.test.ts > service catalog (Module 4) > tenant isolation: the catalog, categories and audit history are per organization 682ms
+ ✓ |integration| test/integration/health.test.ts > agent reports and the health rules engine > after enrollment a heartbeat alone leaves the deployment unknown, with an honest reason 294ms
+ ✓ |integration| test/integration/health.test.ts > agent reports and the health rules engine > a full healthy report set makes the deployment healthy and verified; reports are stored per type 324ms
+ ✓ |integration| test/integration/health.test.ts > agent reports and the health rules engine > reports are strict: unknown fields, free text where a code is expected, and out-of-window times are rejected and audited 243ms
+ ✓ |integration| test/integration/health.test.ts > agent reports and the health rules engine > states follow the rules: database down → critical, high disk → degraded, recovery → healthy; each change is an event 309ms
+ ✓ |integration| test/integration/health.test.ts > agent reports and the health rules engine > the sweep marks a deployment offline when heartbeats stop, and a heartbeat brings it back 319ms
+ ✓ |integration| test/integration/health.test.ts > agent reports and the health rules engine > the health policy is centrally configured, validated, audited, and applied immediately 1021ms
+ ✓ |integration| test/integration/health.test.ts > agent reports and the health rules engine > fleet view: counts per state, synthetic rows labelled separately, live-only filter, RBAC and isolation 1461ms
+ ✓ |integration| test/integration/psa-connection.test.ts > PSA connection status reported by the appliance > a verified test marks the instance succeeded (with the real success time), a failed auth marks credentials invalid, and both are audited 579ms
+ ✓ |integration| test/integration/psa-connection.test.ts > PSA connection status reported by the appliance > the history endpoint lists one row per test (not per report), newest first, and the fleet view carries the appliance status 434ms
+ ✓ |integration| test/integration/psa-connection.test.ts > PSA connection status reported by the appliance > reports naming another instance code are ignored; RBAC and tenant isolation hold 2312ms
+ ✓ |integration| test/integration/decommission.test.ts > decommissioning an enrolled deployment > retires the identity on the Control Plane, is final, is audited, and the appliance learns it from the gateway 676ms
+ ✓ |integration| test/integration/decommission.test.ts > decommissioning an enrolled deployment > frees the license slot and works from suspended and from draft (revoking the unused token and package) 559ms
+ ✓ |integration| test/integration/decommission.test.ts > decommissioning an enrolled deployment > refuses synthetic records 38ms
+ ✓ |integration| test/integration/decommission.test.ts > retention policy and purge > has a default, is per organization, validated, audited, and shows statistics 108ms
+ ✓ |integration| test/integration/decommission.test.ts > retention policy and purge > purges only metadata whose retention period ended, audits each purge, and keeps the record and the audit trail 367ms
+ ✓ |integration| test/integration/decommission.test.ts > removal of a decommissioned record > needs a decommissioned deployment, the typed code and the permission; deletes the record and its data; the audit trail and the gateway refusal stay 492ms
+ ✓ |integration| test/integration/licenses.test.ts > licenses > a license gets its own identifier, is listed and counted, and only license managers may create it 135ms
+ ✓ |integration| test/integration/licenses.test.ts > licenses > deployments bind to the client’s active license by default; packages need an active license with capacity 432ms
+ ✓ |integration| test/integration/licenses.test.ts > licenses > enrollment is refused under a suspended, expired or revoked license, and after the deployment is suspended 423ms
+ ✓ |integration| test/integration/licenses.test.ts > licenses > suspending an enrolled deployment delivers a signed suspend command, blocks other commands and packages, and resume restores it; the health shows the lifecycle and licensing findings 356ms
+ ✓ |integration| test/integration/licenses.test.ts > licenses > the expiry sweep closes licenses past their end date and the health rules flag expiring and expired licenses 235ms
+ ✓ |integration| test/integration/licenses.test.ts > licenses > the Control Plane keeps licenses isolated per organization and the synthetic ones read-only 47ms
+ ✓ |integration| test/integration/database-explorer.test.ts > Database Explorer > schema parts are projected per table; a completed snapshot removes tables that vanished 424ms
+ ✓ |integration| test/integration/database-explorer.test.ts > Database Explorer > the deployment view merges the inventory with details, labels estimates and groups inspection errors 328ms
+ ✓ |integration| test/integration/database-explorer.test.ts > Database Explorer > strict schema reports: anything beyond catalog metadata is rejected and audited without the content 242ms
+ ✓ |integration| test/integration/database-explorer.test.ts > Database Explorer > fleet view separates synthetic records, filters by availability, and honours RBAC and tenant isolation 1640ms
+ ✓ |integration| test/integration/remote-commands.test.ts > remote commands > a command is signed, pulled with the heartbeat (delivered), answered over mTLS (succeeded) and audited at every step 398ms
+ ✓ |integration| test/integration/remote-commands.test.ts > remote commands > parameters are validated per type, the upgrade target comes from the Control Plane, and an up-to-date appliance is refused 294ms
+ ✓ |integration| test/integration/remote-commands.test.ts > remote commands > only pending commands can be cancelled; expired ones are closed by the sweep and never delivered 333ms
+ ✓ |integration| test/integration/remote-commands.test.ts > remote commands > RBAC, isolation and identity: viewers read, only commands.issue holders issue, another organization sees nothing, another appliance cannot answer 402ms
+ ✓ |integration| test/integration/remote-commands.test.ts > remote commands > commands cannot be issued before enrollment or to synthetic records, and every type is non-destructive by construction 91ms
+ ✓ |integration| test/integration/isolation.test.ts > organization isolation through the API > organization A cannot see organization B data (search, dashboard, users, audit) 603ms
+ ✓ |integration| test/integration/isolation.test.ts > organization isolation through the API > organization B sees only its own single client 359ms
+ ✓ |integration| test/integration/isolation.test.ts > organization isolation enforced by PostgreSQL row-level security > with no tenant context, the application role sees zero rows in every tenant table (fail closed) 21ms
+ ✓ |integration| test/integration/isolation.test.ts > organization isolation enforced by PostgreSQL row-level security > an unfiltered query under org A context returns only org A rows 50ms
+ ✓ |integration| test/integration/isolation.test.ts > organization isolation enforced by PostgreSQL row-level security > cannot write into, update or delete another organization’s rows 53ms
+ ✓ |integration| test/integration/isolation.test.ts > organization isolation enforced by PostgreSQL row-level security > technician scope is enforced in the database, not only in the API 58ms
+ ✓ |integration| test/integration/database.test.ts > migrations > created every expected table with row-level security on tenant tables 27ms
+ ✓ |integration| test/integration/database.test.ts > migrations > is idempotent: a second run applies nothing 84ms
+ ✓ |integration| test/integration/database.test.ts > migrations > refuses to run when an applied migration was modified 45ms
+ ✓ |integration| test/integration/database.test.ts > migrations > syncs the permission catalog and the 8 system roles as reference data 30ms
+ ✓ |integration| test/integration/database.test.ts > migrations > seeding refuses to run outside development/test 1ms
+ ✓ |integration| test/integration/database.test.ts > least-privilege application role > psacc_app cannot bypass RLS and is not a superuser 11ms
+ ✓ |integration| test/integration/database.test.ts > least-privilege application role > cannot change the schema 26ms
+ ✓ |integration| test/integration/database.test.ts > least-privilege application role > audit events and health events are append-only for the application 66ms
+ ✓ |integration| test/integration/database.test.ts > least-privilege application role > cannot read global identity data through the auth functions beyond what login needs 14ms
+ ✓ |integration| test/integration/database.test.ts > data integrity constraints > client references are unique per organization, case-insensitively 63ms
+ ✓ |integration| test/integration/database.test.ts > data integrity constraints > a deployment cannot report health before it has enrolled 94ms
+ ✓ |integration| test/integration/database.test.ts > data integrity constraints > PSA connectivity cannot be marked verified without a recorded successful test 40ms
+ ✓ |integration| test/integration/database.test.ts > data integrity constraints > contract end date cannot precede the start date 40ms
+ ✓ |integration| test/integration/database.test.ts > data integrity constraints > a deployment can only bind a PSA instance belonging to the same client 43ms
+
+ Test Files  24 passed (24)
+      Tests  290 passed (290)
+   Start at  08:30:40
+   Duration  818.94s (tests 97%, import 3%)
+

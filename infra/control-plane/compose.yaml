@@ -1,0 +1,149 @@
+# PSA Control Center — containerized Control Plane (Module 10).
+#   pnpm cp:setup   → generates infra/control-plane/.env (secrets, ports, gateway address)
+#   pnpm cp:build   → builds psacc/control-plane-api and psacc/control-plane-web
+#   pnpm cp:up      → PostgreSQL → migrations → API (+ agent gateway) → web
+#   pnpm cp:bootstrap → first organization and administrator (idempotent)
+# Project name is prefixed `psacc-` so it never collides with other stacks on the same engine.
+# Web and API are published on loopback only; the agent gateway is the only listener edge agents
+# reach (mTLS). PostgreSQL is never published. Secrets and keys live only in .env (gitignored).
+name: psacc-cp
+
+x-hardened: &hardened
+  restart: unless-stopped
+  read_only: true
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+  logging:
+    driver: json-file
+    options:
+      max-size: "20m"
+      max-file: "5"
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: psacc-cp-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run pnpm cp:setup}
+      POSTGRES_DB: postgres
+      PSACC_OWNER_PASSWORD: ${PSACC_OWNER_PASSWORD:?run pnpm cp:setup}
+      PSACC_APP_PASSWORD: ${PSACC_APP_PASSWORD:?run pnpm cp:setup}
+      PSACC_DATABASES: psacc
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ../dev/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    security_opt:
+      - no-new-privileges:true
+    shm_size: 256mb
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  # Applies pending migrations as the schema owner, then exits. The API never holds the owner login.
+  migrate:
+    image: psacc/control-plane-api:${VERSION:-0.1.0}
+    container_name: psacc-cp-migrate
+    command: ["node", "dist/database/cli.js", "migrate"]
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      MIGRATION_DATABASE_URL: postgres://psacc_owner:${PSACC_OWNER_PASSWORD}@postgres:5432/psacc
+      # Used only by `pnpm cp:bootstrap` (docker compose run migrate node dist/database/cli.js bootstrap).
+      BOOTSTRAP_ORG_NAME: ${BOOTSTRAP_ORG_NAME:-PSA Control Center}
+      BOOTSTRAP_ORG_SLUG: ${BOOTSTRAP_ORG_SLUG:-control-plane}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:?run pnpm cp:setup}
+      BOOTSTRAP_ADMIN_NAME: ${BOOTSTRAP_ADMIN_NAME:-Platform Administrator}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:?run pnpm cp:setup}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+
+  api:
+    <<: *hardened
+    image: psacc/control-plane-api:${VERSION:-0.1.0}
+    container_name: psacc-cp-api
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      HOST: 0.0.0.0
+      PORT: "4210"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      # The web container proxies /api; it is the only hop in front of the API inside this stack.
+      TRUST_PROXY: uniquelocal
+      APP_ALLOWED_ORIGINS: ${APP_ALLOWED_ORIGINS:?run pnpm cp:setup}
+      OPENAPI_ENABLED: ${OPENAPI_ENABLED:-false}
+      AUTH_MFA_REQUIRED: ${AUTH_MFA_REQUIRED:-false}
+      SESSION_IDLE_MINUTES: "30"
+      SESSION_ABSOLUTE_HOURS: "12"
+      CSRF_SECRET: ${CSRF_SECRET:?run pnpm cp:setup}
+      DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY:?run pnpm cp:setup}
+      DATABASE_URL: postgres://psacc_app:${PSACC_APP_PASSWORD}@postgres:5432/psacc
+      DB_POOL_MAX: "20"
+      EDGE_IMAGE_REPOSITORY: ${EDGE_IMAGE_REPOSITORY:-psacc/psa-edge}
+      EDGE_IMAGE_VERSION: ${EDGE_IMAGE_VERSION:-0.1.0}
+      EDGE_IMAGE_DIGEST: ${EDGE_IMAGE_DIGEST:-}
+      EDGE_HEARTBEAT_SECONDS: ${EDGE_HEARTBEAT_SECONDS:-60}
+      AGENT_GATEWAY_ENABLED: "true"
+      AGENT_GATEWAY_HOST: 0.0.0.0
+      AGENT_GATEWAY_PORT: "8443"
+      AGENT_GATEWAY_URL: ${AGENT_GATEWAY_URL:?run pnpm cp:setup}
+    ports:
+      - "127.0.0.1:${API_PORT:-4410}:4210"
+      - "${AGENT_GATEWAY_BIND:-0.0.0.0}:${AGENT_GATEWAY_PORT:-8643}:8443"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:4210/api/v1/health/live || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 20s
+
+  web:
+    <<: *hardened
+    image: psacc/control-plane-web:${VERSION:-0.1.0}
+    container_name: psacc-cp-web
+    environment:
+      API_INTERNAL_URL: http://api:4210
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+    ports:
+      - "127.0.0.1:${WEB_PORT:-3410}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+      - /app/apps/web/.next/cache:size=64m,uid=1000,gid=1000
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/login || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 20s
+
+volumes:
+  pgdata:
+    name: psacc-cp-pgdata

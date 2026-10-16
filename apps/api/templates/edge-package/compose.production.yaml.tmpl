@@ -1,0 +1,39 @@
+# Production overrides for {{deploymentCode}}: images pinned by digest and resource limits.
+# Usage: docker compose -f compose.yaml -f compose.production.yaml up -d
+# (scripts/install.sh --production and scripts/install.ps1 -Production do this for you.)
+
+x-edge-image: &edge-image "{{prodEdgeImageExpr}}"
+
+services:
+  edge-postgres:
+    image: "${PSA_POSTGRES_IMAGE:?Set PSA_POSTGRES_IMAGE to the PostgreSQL 17 image pinned by digest, for example postgres:17-alpine@sha256:<digest>}"
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2g
+  edge-backup:
+    image: "${PSA_POSTGRES_IMAGE:?Set PSA_POSTGRES_IMAGE to the PostgreSQL 17 image pinned by digest, for example postgres:17-alpine@sha256:<digest>}"
+  edge-migrate:
+    image: *edge-image
+  edge-api:
+    image: *edge-image
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512m
+  edge-worker:
+    image: *edge-image
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 768m
+  edge-agent:
+    image: *edge-image
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256m

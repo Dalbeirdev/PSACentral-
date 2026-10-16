@@ -1,0 +1,14 @@
+$ docker compose exec edge-agent edge-agent renew   (exit 0)
+{
+  "enrolled": true,
+  "state": "enrolled",
+  "detail": "Enrolled with the Control Plane; communicating over mutual TLS with this installation's machine certificate.",
+  "gatewayUrl": "https://10.56.37.229:8443",
+  "serial": "53bce307f50dc8b673d5412fada52794",
+  "certificateNotAfter": "2027-01-12T14:43:53Z",
+  "lastHeartbeatAt": "2026-10-14T14:43:40.667864006Z",
+  "tokenExpiresAt": "2026-10-14T18:42:55.195Z",
+  "tokenExpired": false,
+  "lastReportAt": "2026-10-14T14:43:40.668062422Z",
+  "bufferedReports": 3
+}

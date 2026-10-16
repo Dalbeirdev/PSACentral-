@@ -1,0 +1,47 @@
+<#
+  Verifies the local installation of {{deploymentCode}} on this Windows host.
+  It only checks this machine. The dashboard shows the deployment as enrolled or verified only
+  after the agent has connected and its reports pass the Control Plane's health checks.
+
+  Usage: powershell -ExecutionPolicy Bypass -File scripts\verify.ps1 [-Production]
+#>
+param([switch]$Production)
+Set-Location (Split-Path -Parent $PSScriptRoot)
+
+$composeArgs = @('compose', '-f', 'compose.yaml')
+if ($Production) { $composeArgs += @('-f', 'compose.production.yaml') }
+$script:passed = 0
+$script:failed = 0
+function Check([string]$name, [scriptblock]$test) {
+  $ok = $false
+  try { $ok = [bool](& $test) } catch { $ok = $false }
+  if ($ok) { Write-Host "PASS  $name"; $script:passed++ } else { Write-Host "FAIL  $name"; $script:failed++ }
+}
+# A simple function (no param block) so docker flags such as -T reach $args unchanged.
+function Ok { & docker @composeArgs @args *> $null; $LASTEXITCODE -eq 0 }
+function Running([string]$svc) { (& docker @composeArgs ps --status running --services 2>$null) -contains $svc }
+
+Write-Host "Verifying {{deploymentCode}} (installation {{installationId}})"
+Check 'Docker Engine reachable' { & docker info *> $null; $LASTEXITCODE -eq 0 }
+Check 'Compose configuration valid' { Ok config --quiet }
+Check 'Secrets present on this host' { @('postgres_owner_password', 'app_db_password', 'inspector_db_password', 'data_key') | ForEach-Object { (Test-Path "secrets/$_") -and ((Get-Item "secrets/$_").Length -gt 0) } | Where-Object { -not $_ } | Measure-Object | ForEach-Object { $_.Count -eq 0 } }
+Check 'Database container running' { Running 'edge-postgres' }
+Check 'PostgreSQL accepting connections' { Ok exec -T edge-postgres pg_isready -U psa_edge_owner -d psa_edge }
+Check 'Database migrations completed' { ((& docker @composeArgs ps -a --format '{{.ExitCode}}' edge-migrate 2>$null) | Select-Object -First 1) -eq '0' }
+Check 'Application tables present (at least {{minTableCount}})' {
+  $sql = "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public'"
+  $n = & docker @composeArgs exec -T edge-postgres sh -c "PGPASSWORD=`"`$(cat /run/secrets/postgres_owner_password)`" psql -h 127.0.0.1 -U psa_edge_owner -d psa_edge -tAc `"$sql`"" 2>$null
+  [int]("$n".Trim()) -ge {{minTableCount}}
+}
+Check 'Edge API running' { Running 'edge-api' }
+Check 'Edge worker running' { Running 'edge-worker' }
+Check 'Edge agent running' { Running 'edge-agent' }
+Check 'Backup service running' { Running 'edge-backup' }
+Check 'Edge API healthy' { Ok exec -T edge-api edge-api healthcheck }
+Check 'Agent enrolled with the Control Plane' { Ok exec -T edge-agent edge-agent status --require-enrolled }
+
+Write-Host "`n$($script:passed) passed, $($script:failed) failed"
+if ($script:failed -gt 0) {
+  Write-Host 'Details: docker compose logs <service>   (services: edge-postgres edge-migrate edge-api edge-worker edge-agent)'
+  exit 1
+}

@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Verifies the local installation of {{deploymentCode}} on this host.
+# It only checks this machine. The dashboard shows the deployment as enrolled or verified only
+# after the agent has connected and its reports pass the Control Plane's health checks.
+#
+# Usage: scripts/verify.sh [--production]
+set -uo pipefail
+cd "$(dirname "$0")/.."
+
+COMPOSE=(docker compose -f compose.yaml)
+if [ "${1:-}" = "--production" ]; then COMPOSE+=(-f compose.production.yaml); fi
+
+passed=0
+failed=0
+check() {
+  local name="$1"; shift
+  if "$@" >/dev/null 2>&1; then
+    printf 'PASS  %s\n' "$name"; passed=$((passed + 1))
+  else
+    printf 'FAIL  %s\n' "$name"; failed=$((failed + 1))
+  fi
+}
+
+running() { "${COMPOSE[@]}" ps --status running --services | grep -qx "$1"; }
+migrated() { [ "$("${COMPOSE[@]}" ps -a --format '{{.ExitCode}}' edge-migrate | head -n1)" = "0" ]; }
+db_ready() { "${COMPOSE[@]}" exec -T edge-postgres pg_isready -U psa_edge_owner -d psa_edge; }
+table_count() {
+  "${COMPOSE[@]}" exec -T edge-postgres sh -c \
+    'PGPASSWORD="$(cat /run/secrets/postgres_owner_password)" psql -h 127.0.0.1 -U psa_edge_owner -d psa_edge -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema = '"'"'public'"'"'"'
+}
+tables_present() { [ "$(table_count | tr -d '[:space:]')" -ge {{minTableCount}} ] 2>/dev/null; }
+secrets_present() { for s in postgres_owner_password app_db_password inspector_db_password data_key; do [ -s "secrets/$s" ] || return 1; done; }
+
+echo "Verifying {{deploymentCode}} (installation {{installationId}})"
+check "Docker Engine reachable" docker info
+check "Compose configuration valid" "${COMPOSE[@]}" config --quiet
+check "Secrets present on this host" secrets_present
+check "Database container running" running edge-postgres
+check "PostgreSQL accepting connections" db_ready
+check "Database migrations completed" migrated
+check "Application tables present (at least {{minTableCount}})" tables_present
+check "Edge API running" running edge-api
+check "Edge worker running" running edge-worker
+check "Edge agent running" running edge-agent
+check "Backup service running" running edge-backup
+check "Edge API healthy" "${COMPOSE[@]}" exec -T edge-api edge-api healthcheck
+check "Agent enrolled with the Control Plane" "${COMPOSE[@]}" exec -T edge-agent edge-agent status --require-enrolled
+
+printf '\n%d passed, %d failed\n' "$passed" "$failed"
+if [ "$failed" -gt 0 ]; then
+  echo "Details: docker compose logs <service>   (services: edge-postgres edge-migrate edge-api edge-worker edge-agent)"
+  exit 1
+fi

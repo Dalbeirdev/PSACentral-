@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# PSA Edge appliance installer — {{deploymentCode}} (package {{packageNumber}}).
+# Generates this installation's secrets on this host, validates the configuration and starts the
+# appliance. Safe to run again: existing secrets and data volumes are kept.
+#
+# Usage: scripts/install.sh [--production] [--prepare]
+#   --prepare  create this host's secrets and .env and validate the configuration, without pulling or starting
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+PROFILE=development
+PREPARE=0
+for arg in "$@"; do
+  case "$arg" in
+    --production) PROFILE=production ;;
+    --prepare) PREPARE=1 ;;
+    -h|--help) sed -n '2,7p' "$0"; exit 0 ;;
+    *) echo "Unknown option: $arg" >&2; exit 2 ;;
+  esac
+done
+COMPOSE=(docker compose -f compose.yaml)
+if [ "$PROFILE" = production ]; then COMPOSE+=(-f compose.production.yaml); fi
+
+step() { printf '\n==> %s\n' "$1"; }
+fail() { printf 'ERROR: %s\n' "$1" >&2; exit 1; }
+
+step "Checking prerequisites"
+command -v docker >/dev/null 2>&1 || fail "Docker is not installed on this host."
+docker info >/dev/null 2>&1 || fail "Docker Engine is not running, or this user may not use it."
+docker compose version >/dev/null 2>&1 || fail "Docker Compose v2 is required (docker compose)."
+EXPIRES="{{tokenExpiresAt}}"
+if exp=$(date -u -d "$EXPIRES" +%s 2>/dev/null) && [ "$(date -u +%s)" -ge "$exp" ]; then
+  fail "The enrollment token in this package expired at $EXPIRES. Generate a new package in the dashboard."
+fi
+
+step "Creating this installation's secrets (they never leave this host)"
+umask 077
+mkdir -p secrets
+chmod 700 secrets
+# The directory (0700) protects the secrets on this host; the files are readable so that the
+# appliance containers, which run as an unprivileged user, can read their bind-mounted copy.
+gen() {
+  local name="$1" bytes="$2" file="secrets/$1"
+  if [ -s "$file" ]; then
+    echo "  kept     $name"
+  else
+    head -c "$bytes" /dev/urandom | base64 | tr -d '\n' > "$file"
+    echo "  created  $name"
+  fi
+  chmod 444 "$file"
+}
+gen postgres_owner_password 32
+gen app_db_password 32
+gen inspector_db_password 32
+gen data_key 32
+# Same protection for the single-use enrollment token.
+chmod 700 enrollment
+chmod 444 enrollment/enrollment.json
+
+if [ ! -f .env ]; then
+  cp config/edge.env.template .env
+  echo "  created  .env (from config/edge.env.template)"
+fi
+
+step "Validating the Compose configuration"
+"${COMPOSE[@]}" config --quiet
+
+if [ "$PREPARE" = 1 ]; then
+  echo ""
+  echo "Prepared {{deploymentCode}}: secrets and .env created, configuration valid. Run scripts/install.sh to start it."
+  exit 0
+fi
+
+step "Getting images"
+if [ "$PROFILE" = production ]; then
+  "${COMPOSE[@]}" pull
+else
+  "${COMPOSE[@]}" pull --ignore-pull-failures || true
+fi
+
+step "Starting the appliance"
+"${COMPOSE[@]}" up -d
+
+PORT=$(grep -E '^EDGE_LOCAL_ADMIN_PORT=' .env | cut -d= -f2 || true)
+VERIFY=scripts/verify.sh
+if [ "$PROFILE" = production ]; then VERIFY="$VERIFY --production"; fi
+cat <<EOF
+
+The PSA Edge appliance for {{deploymentCode}} has been started.
+
+  Check the installation:   $VERIFY
+  Local admin and setup:    http://127.0.0.1:${PORT:-{{localAdminPort}}}  (this host only)
+
+The dashboard shows this deployment as enrolled only after the agent has connected and
+registered installation {{installationId}}. Once it is enrolled, delete the downloaded ZIP:
+its enrollment token cannot be used again.
+EOF

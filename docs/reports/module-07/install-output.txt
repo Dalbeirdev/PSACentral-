@@ -1,0 +1,23 @@
+$ scripts/install.sh
+==> Checking prerequisites
+
+==> Creating this installation's secrets (they never leave this host)
+  created  postgres_owner_password
+  created  app_db_password
+  created  inspector_db_password
+  created  data_key
+
+==> Validating the Compose configuration
+
+==> Getting images
+
+==> Starting the appliance
+
+The PSA Edge appliance for DEP-00030 has been started.
+
+  Check the installation:   scripts/verify.sh
+  Local admin and setup:    http://127.0.0.1:18030  (this host only)
+
+The dashboard shows this deployment as enrolled only after the agent has connected and
+registered installation 9b9e52c0-035c-4562-aaab-081e4f79cdf6. Once it is enrolled, delete the downloaded ZIP:
+its enrollment token cannot be used again.

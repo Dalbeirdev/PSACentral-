@@ -1,0 +1,32 @@
+#!/bin/sh
+# Local database backups for {{deploymentCode}}: pg_dump (custom format) into the edge-backups volume,
+# each run recorded in the backup_runs table with its size and SHA-256. Runs in the edge-backup service.
+# Settings (in .env): EDGE_BACKUP_INTERVAL_HOURS (default 24), EDGE_BACKUP_RETENTION (default 7),
+# EDGE_BACKUP_INITIAL_DELAY_SECONDS (default 60).
+set -eu
+PGPASSWORD="$(cat /run/secrets/postgres_owner_password)"
+export PGPASSWORD
+interval_hours="${BACKUP_INTERVAL_HOURS:-24}"
+retention="${BACKUP_RETENTION:-7}"
+q() { psql -v ON_ERROR_STOP=1 -qtAX -c "$1"; }
+
+until pg_isready -q; do sleep 2; done
+sleep "${BACKUP_INITIAL_DELAY_SECONDS:-60}"
+while true; do
+  ts=$(date -u +%Y%m%dT%H%M%SZ)
+  f="psa_edge-$ts.dump"
+  id=$(q "INSERT INTO backup_runs (status) VALUES ('running') RETURNING id")
+  if pg_dump -Fc -f "/backups/$f.part" && mv "/backups/$f.part" "/backups/$f"; then
+    size=$(stat -c %s "/backups/$f")
+    sum=$(sha256sum "/backups/$f" | cut -d' ' -f1)
+    q "UPDATE backup_runs SET status = 'succeeded', finished_at = now(), file_name = '$f', size_bytes = $size, sha256 = '$sum' WHERE id = '$id'"
+    echo "backup succeeded: $f ($size bytes)"
+  else
+    rm -f "/backups/$f.part"
+    q "UPDATE backup_runs SET status = 'failed', finished_at = now(), error_message = 'pg_dump failed' WHERE id = '$id'"
+    echo "backup failed" >&2
+  fi
+  # Keep the newest $retention backups.
+  ls -1t /backups/psa_edge-*.dump 2>/dev/null | tail -n +$((retention + 1)) | xargs -r rm -f
+  sleep $((interval_hours * 3600))
+done

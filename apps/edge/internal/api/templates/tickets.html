@@ -1,0 +1,37 @@
+{{template "head" .}}
+{{with .Data}}
+<h1>Tickets</h1>
+<p class="lead">This appliance’s own ticket database — the system of record for this client. PSA tickets are mirrored here; changes made here are pushed back by the worker.</p>
+{{if eq .Saved "created"}}<div class="alert ok" role="status">Ticket created on this appliance.</div>{{end}}
+<div class="card">
+  <form method="get" action="/tickets" class="filters">
+    <label for="q">Search</label><input id="q" name="q" type="text" value="{{.Query}}" placeholder="Title, PSA id or requester">
+    <label for="status">Status</label>
+    <select id="status" name="status"><option value="">Any</option>{{range .Statuses}}<option value="{{.}}" {{if eq . $.Data.Status}}selected{{end}}>{{.}}</option>{{end}}</select>
+    <label for="sync">Sync state</label>
+    <select id="sync" name="sync"><option value="">Any</option>{{range $s := list "synced" "pending_push" "conflict" "push_failed" "local_only"}}<option value="{{$s}}" {{if eq $s $.Data.Sync}}selected{{end}}>{{$s}}</option>{{end}}</select>
+    <button class="btn" type="submit">Apply</button>
+    <a class="btn secondary" href="/tickets/new">New ticket</a>
+  </form>
+  <p class="hint">{{.Total}} ticket(s){{range $k, $v := .Counts}} · {{$k}}: {{$v}}{{end}}</p>
+  {{if .Tickets}}
+  <div class="scroll"><table>
+    <thead><tr><th>Ticket</th><th>Status</th><th>Priority</th><th>Requester</th><th>Sync</th><th>Updated</th></tr></thead>
+    <tbody>
+    {{range .Tickets}}
+      <tr>
+        <td><a href="/tickets/{{.ID}}">{{.Title}}</a><br><span class="mono hint">{{if .ExternalID}}PSA #{{.ExternalID}}{{else}}local{{end}} · {{.Origin}}</span></td>
+        <td><span class="pill {{if or (eq .Status "resolved") (eq .Status "closed")}}off{{else if eq .Status "new"}}warn{{else}}ok{{end}}">{{.Status}}</span>{{if .PSAStatus}}<br><span class="hint">{{.PSAStatus}}</span>{{end}}</td>
+        <td>{{.Priority}}</td>
+        <td>{{if .RequesterEmail}}{{.RequesterEmail}}{{else}}—{{end}}</td>
+        <td><span class="pill {{if eq .SyncState "synced"}}ok{{else if eq .SyncState "conflict"}}err{{else if eq .SyncState "push_failed"}}err{{else}}warn{{end}}">{{.SyncState}}</span></td>
+        <td class="mono">{{ts .UpdatedAt}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table></div>
+  <p class="hint">Page {{.Page}}{{if .HasMore}} · <a href="/tickets?page={{inc .Page}}&status={{.Status}}&q={{.Query}}&sync={{.Sync}}">next page</a>{{end}}</p>
+  {{else}}<p class="hint">No tickets yet. They appear after the first synchronization with the PSA, or when one is created here.</p>{{end}}
+</div>
+{{end}}
+{{template "foot" .}}

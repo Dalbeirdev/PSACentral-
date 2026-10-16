@@ -1,0 +1,63 @@
+{{template "head" .}}
+{{with .Data}}
+{{with .T}}
+<p class="hint"><a href="/tickets">← Tickets</a></p>
+<h1>{{.Title}}</h1>
+<p class="lead">{{if .ExternalID}}PSA #{{.ExternalID}}{{else}}Not in the PSA yet{{end}} · origin {{.Origin}} · <span class="pill {{if eq .SyncState "synced"}}ok{{else if eq .SyncState "conflict"}}err{{else if eq .SyncState "push_failed"}}err{{else}}warn{{end}}">{{.SyncState}}</span></p>
+{{end}}
+{{if eq .Saved "created"}}<div class="alert ok" role="status">Ticket created on this appliance{{if eq (index .T.SyncState) "pending_push"}}; it will be created in the PSA on the next synchronization{{else if eq .T.SyncState "local_only"}}. It stays on this appliance: creating tickets in {{.Provider}} needs a company mapping that is not configured{{end}}.</div>{{end}}
+{{if eq .Saved "status"}}<div class="alert ok" role="status">Status changed here; the worker pushes it to the PSA on its next run.</div>{{end}}
+{{if eq .Saved "note"}}<div class="alert ok" role="status">Note added here; the worker pushes it to the PSA on its next run.</div>{{end}}
+<div class="grid">
+  <section class="card" aria-labelledby="t-h">
+    <h2 id="t-h">Ticket</h2>
+    {{with .T}}
+    <dl>
+      <div><dt>Status</dt><dd>{{.Status}}{{if .PSAStatus}} <span class="hint">(PSA: {{.PSAStatus}})</span>{{end}}</dd></div>
+      <div><dt>Priority</dt><dd>{{.Priority}}</dd></div>
+      <div><dt>Requester</dt><dd>{{if .RequesterEmail}}{{.RequesterEmail}}{{else}}—{{end}}</dd></div>
+      <div><dt>Created</dt><dd class="mono">{{ts .CreatedAt}}</dd></div>
+      <div><dt>Updated here</dt><dd class="mono">{{ts .UpdatedAt}}</dd></div>
+      <div><dt>Last PSA change</dt><dd class="mono">{{fmtTime .ExternalAt}}</dd></div>
+      <div><dt>Last synchronized</dt><dd class="mono">{{fmtTime .LastSyncedAt}}</dd></div>
+      <div><dt>Resolved</dt><dd class="mono">{{fmtTime .ResolvedAt}}</dd></div>
+    </dl>
+    {{if .Description}}<h2>Description</h2><p class="pre">{{.Description}}</p>{{end}}
+    {{end}}
+  </section>
+  <section class="card" aria-labelledby="act-h">
+    <h2 id="act-h">Actions</h2>
+    <form method="post" action="/tickets/{{.T.ID}}">
+      <input type="hidden" name="csrf" value="{{$.Session.CSRF}}"><input type="hidden" name="action" value="status">
+      <label for="status">Change status</label>
+      <select id="status" name="status">{{range .Statuses}}<option value="{{.}}" {{if eq . $.Data.T.Status}}selected{{end}}>{{.}}</option>{{end}}</select>
+      <button class="btn" type="submit">Save status</button>
+    </form>
+    <form method="post" action="/tickets/{{.T.ID}}">
+      <input type="hidden" name="csrf" value="{{$.Session.CSRF}}"><input type="hidden" name="action" value="note">
+      <label for="text">Add a note</label>
+      <textarea id="text" name="text" rows="4" placeholder="Visible in the PSA once pushed"></textarea>
+      <button class="btn" type="submit">Add note</button>
+    </form>
+    <p class="hint">Changes are stored here first and pushed to the PSA by the worker (every few minutes, or from the Synchronization page). If the PSA changed the ticket meanwhile, the PSA’s status wins and a conflict is recorded below.</p>
+  </section>
+</div>
+<section class="card" aria-labelledby="ev-h">
+  <h2 id="ev-h">Timeline</h2>
+  {{if .Events}}<div class="scroll"><table>
+    <thead><tr><th>When</th><th>Event</th><th>Source</th><th>Detail</th><th>Push</th></tr></thead>
+    <tbody>
+    {{range .Events}}
+      <tr>
+        <td class="mono">{{ts .At}}</td>
+        <td>{{.Type}}</td>
+        <td>{{.Source}}</td>
+        <td>{{range $k, $v := .Payload}}{{if ne $k "text"}}<span class="mono">{{$k}}</span>: {{$v}} {{end}}{{end}}{{with index .Payload "text"}}<br><span class="pre">{{.}}</span>{{end}}</td>
+        <td>{{if eq .Source "portal"}}{{if .PushedAt}}<span class="pill ok">pushed {{ts .PushedAt}}</span>{{else}}<span class="pill warn">pending</span>{{end}}{{if .PushError}}<br><span class="hint">{{.PushError}}</span>{{end}}{{else}}—{{end}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table></div>{{else}}<p class="hint">No events.</p>{{end}}
+</section>
+{{end}}
+{{template "foot" .}}

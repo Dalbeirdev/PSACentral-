@@ -1,0 +1,29 @@
+{
+  "ticket_processing_metrics": {
+    "localOnly": 0,
+    "pushFailed": 0,
+    "ticketsOpen": 4,
+    "ticketsTotal": 5,
+    "eventsLast24h": 7,
+    "failedLast24h": 0,
+    "lastProcessedAt": "2026-10-15T06:55:05.167862Z",
+    "pendingOutbound": 0,
+    "conflictsLast24h": 0
+  },
+  "synchronization": {
+    "errorCode": null,
+    "itemsSent": 3,
+    "lastRunAt": "2026-10-15T06:55:33.91126Z",
+    "watermark": "2026-10-15T06:55:33.910778Z",
+    "httpStatus": null,
+    "lastStatus": "succeeded",
+    "implemented": true,
+    "itemsFailed": 0,
+    "runsLast24h": 2,
+    "recentErrors": [],
+    "errorsLast24h": 0,
+    "itemsReceived": 0,
+    "lastSucceededAt": "2026-10-15T06:55:33.93214Z",
+    "failedRunsLast24h": 0
+  }
+}

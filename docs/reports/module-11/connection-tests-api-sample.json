@@ -1,0 +1,20 @@
+[
+  {
+    "testedAt": "2026-10-15T04:45:29.066555Z",
+    "testedBy": "local_admin",
+    "ok": true,
+    "code": "ok",
+    "httpStatus": 200,
+    "latencyMs": 5,
+    "remoteIdentity": {
+      "api": "Custom REST",
+      "host": "10.56.37.229:61035",
+      "path": "/health"
+    },
+    "deployment": {
+      "id": "(omitted)",
+      "code": "DEP-00033"
+    },
+    "reportedAt": "2026-10-15T04:45:41.650Z"
+  }
+]

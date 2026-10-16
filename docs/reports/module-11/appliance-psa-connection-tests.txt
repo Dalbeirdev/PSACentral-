@@ -1,0 +1,6 @@
+$ psql (as the database owner, on the appliance)
+SELECT tested_at, tested_by, ok, code, http_status, latency_ms, left(detail, 80) FROM psa_connection_tests ORDER BY id;
+--
+2026-10-15 04:45:28.47834+00|local_admin|f|not_configured||0|Credentials are missing: apiKey. Enter them in this appliance's local admin UI.
+2026-10-15 04:45:28.711356+00|local_admin|f|tls_error||8|TLS handshake failed: certificate signed by unknown authority. For on-premise se
+2026-10-15 04:45:29.066837+00|local_admin|t|ok|200|5|Authentication and API access succeeded.

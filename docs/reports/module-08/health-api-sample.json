@@ -1,0 +1,91 @@
+{
+  "healthState": "healthy",
+  "healthReason": null,
+  "findings": [
+    {
+      "code": "psa_not_configured",
+      "message": "PSA credentials have not been entered on the appliance.",
+      "severity": "info"
+    }
+  ],
+  "events": [
+    {
+      "healthState": "healthy",
+      "reason": null,
+      "source": "agent",
+      "observedAt": "2026-10-14T15:32:03.261Z"
+    },
+    {
+      "healthState": "critical",
+      "reason": "PostgreSQL is not available (database_unavailable). edge-postgres is down (database_unavailable). edge-api is down (degraded_degraded).",
+      "source": "agent",
+      "observedAt": "2026-10-14T15:31:48.168Z"
+    },
+    {
+      "healthState": "healthy",
+      "reason": null,
+      "source": "agent",
+      "observedAt": "2026-10-14T15:30:47.899Z"
+    }
+  ],
+  "latestTypes": [
+    "containers",
+    "database",
+    "host_resources",
+    "psa_integration_status",
+    "ticket_processing_metrics",
+    "synchronization",
+    "backup",
+    "versions",
+    "certificates_security"
+  ],
+  "hostResources": {
+    "cpuCount": 16,
+    "diskMount": "docker-volumes",
+    "cpuPercent": 1.4,
+    "diskUsedBytes": 213542932480,
+    "uptimeSeconds": 37418,
+    "diskTotalBytes": 1081101176832,
+    "memoryUsedBytes": 8548352,
+    "memoryLimitBytes": 12540588032
+  },
+  "containers": {
+    "services": [
+      {
+        "name": "edge-postgres",
+        "probe": "database",
+        "state": "up"
+      },
+      {
+        "name": "edge-api",
+        "probe": "http",
+        "state": "up"
+      },
+      {
+        "name": "edge-agent",
+        "probe": "self",
+        "state": "up"
+      },
+      {
+        "name": "edge-worker",
+        "probe": "liveness",
+        "state": "up",
+        "lastSeenAt": "2026-10-14T15:31:17Z"
+      },
+      {
+        "name": "edge-backup",
+        "probe": "liveness",
+        "state": "up"
+      }
+    ]
+  },
+  "database": {
+    "tables": "13 tables (inventory omitted)",
+    "available": true,
+    "sizeBytes": 8648371,
+    "schemaVersion": "0002",
+    "serverVersion": "17.11",
+    "lastMigratedAt": "2026-10-14T15:30:45.624492Z",
+    "migrationsApplied": 2
+  }
+}

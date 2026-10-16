@@ -1,0 +1,36 @@
+{{template "head" .}}
+{{with .Data}}
+<h1>Removal</h1>
+<p class="lead">How this appliance (<span class="mono">{{.Code}}</span>, Compose project <span class="mono">{{.Project}}</span>) is retired. Nothing here is ever triggered remotely: the provider can decommission the deployment, the removal itself is always run by you on this host.</p>
+{{if .Decommissioned}}<div class="alert error" role="alert" data-testid="decommissioned-banner"><strong>Decommissioned by the provider</strong> since <span class="mono">{{.Since}}</span>. The appliance no longer reports to the Control Plane; PSA connection tests and ticket synchronization have stopped. Tickets, data and this administration page stay on this host until you remove the appliance.</div>
+{{else}}<div class="alert info" data-testid="not-decommissioned">The provider has <strong>not</strong> decommissioned this deployment (agent state <span class="mono">{{.AgentState}}</span>). Ask your PSA Control Center administrator to decommission it first; the uninstall script refuses to wipe an active identity.</div>{{end}}
+<div class="grid">
+  <section class="card" aria-labelledby="order-h">
+    <h2 id="order-h">Order of operations</h2>
+    <ol>
+      <li><strong>Control Plane first.</strong> The administrator decommissions the deployment in the dashboard: its machine certificate, enrollment token and package are revoked and open commands are cancelled. This appliance notices at its next heartbeat and stops PSA work.</li>
+      <li><strong>This host second.</strong> Run the uninstall script from the package folder, as the user who installed the appliance.</li>
+    </ol>
+  </section>
+  <section class="card" aria-labelledby="stop-h">
+    <h2 id="stop-h">Stop and keep the data</h2>
+    <p>Containers and networks are removed; the database, logs, backups, agent state, <span class="mono">./secrets</span> and <span class="mono">.env</span> stay. <span class="mono">scripts/install.sh</span> brings the same installation back.</p>
+    <pre class="mono">scripts/uninstall.sh
+# Windows
+powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1</pre>
+  </section>
+  <section class="card" aria-labelledby="wipe-h">
+    <h2 id="wipe-h">Remove everything</h2>
+    <p><strong>Irreversible.</strong> Deletes the operational database (locally stored tickets, the encrypted PSA credentials), logs, backups, agent state, <span class="mono">./secrets</span> and <span class="mono">.env</span>. Make and check a backup first if the data may still be needed. The deployment ID must be typed to confirm.</p>
+    <pre class="mono">scripts/uninstall.sh --wipe --confirm {{.Code}}
+# Windows
+powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1 -Wipe -Confirm {{.Code}}</pre>
+    <p class="hint">Afterwards delete the package folder; the PSA Edge image can be removed with <span class="mono">docker image rm</span> once no other deployment on this host uses it.</p>
+  </section>
+  <section class="card" aria-labelledby="keep-h">
+    <h2 id="keep-h">What the Control Plane keeps</h2>
+    <p>Only metadata: the deployment record, its identity history and the audit trail. Reports, heartbeats, the table inventory and the command history are purged after the provider's retention period. No ticket, credential or database row ever left this host.</p>
+  </section>
+</div>
+{{end}}
+{{template "foot" .}}

@@ -1,0 +1,19 @@
+{{template "head" .}}
+<p class="hint"><a href="/tickets">← Tickets</a></p>
+<h1>New ticket</h1>
+<p class="lead">Raised on this appliance.{{if .Data.CanCreateInPSA}} It will be created in the PSA on the next synchronization.{{else}} It stays on this appliance: creating tickets in {{.Data.Provider}} needs a company mapping that is not configured yet.{{end}}</p>
+<div class="card">
+  <form method="post" action="/tickets" novalidate>
+    <input type="hidden" name="csrf" value="{{.Session.CSRF}}">
+    <label for="title">Title</label>
+    <input id="title" name="title" type="text" maxlength="500" value="{{index .Fields "title"}}" required>
+    <label for="description">Description</label>
+    <textarea id="description" name="description" rows="6">{{index .Fields "description"}}</textarea>
+    <label for="priority">Priority</label>
+    <select id="priority" name="priority">{{range .Data.Priorities}}<option value="{{.}}" {{if eq . (index $.Fields "priority")}}selected{{else if and (eq . "normal") (not (index $.Fields "priority"))}}selected{{end}}>{{.}}</option>{{end}}</select>
+    <label for="requester_email">Requester e-mail (optional)</label>
+    <input id="requester_email" name="requester_email" type="email" maxlength="254" value="{{index .Fields "requester_email"}}">
+    <button class="btn" type="submit">Create ticket</button>
+  </form>
+</div>
+{{template "foot" .}}

@@ -1,0 +1,55 @@
+<#
+  PSA Edge appliance removal — {{deploymentCode}} (package {{packageNumber}}), Windows Docker hosts.
+  Stops the appliance and, only when asked, wipes everything it stored on this host. Nothing here is
+  ever triggered remotely: the Control Plane can retire the deployment's identity (decommission), the
+  removal itself is always run by the host operator.
+
+  Usage: powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1 [-Wipe -Confirm {{deploymentCode}}] [-Force]
+    (no option)  stop and remove the containers and networks; keep the data volumes, .\secrets and .env
+    -Wipe        also delete the data volumes (database, logs, backups, agent state), .\secrets and .env — irreversible
+    -Confirm     the deployment ID, required with -Wipe
+    -Force       wipe although the Control Plane has not decommissioned this deployment (not recommended)
+#>
+param([switch]$Wipe, [string]$Confirm = '', [switch]$Force)
+$ErrorActionPreference = 'Stop'
+Set-Location (Split-Path -Parent $PSScriptRoot)
+
+$project = '{{projectName}}'
+$composeArgs = @('compose', '-f', 'compose.yaml')
+function Step([string]$m) { Write-Host "`n==> $m" }
+function Fail([string]$m) { Write-Error $m; exit 1 }
+function Compose { & docker @composeArgs @args; if ($LASTEXITCODE -ne 0) { Fail "docker $($composeArgs + $args -join ' ') failed." } }
+
+if (-not (Get-Command docker -ErrorAction SilentlyContinue)) { Fail 'Docker is not installed on this host.' }
+& docker info *> $null; if ($LASTEXITCODE -ne 0) { Fail 'Docker Engine is not running, or this user may not use it.' }
+
+Step 'Appliance {{deploymentCode}} on this host'
+& docker @composeArgs ps 2>$null; if ($LASTEXITCODE -ne 0) { Write-Host '  (not running)' }
+
+if ($Wipe) {
+  if ($Confirm -ne '{{deploymentCode}}') { Fail '-Wipe needs -Confirm {{deploymentCode}} (the deployment ID, exactly as shown in the dashboard).' }
+  # The agent's own view of its identity: 'decommissioned' once the Control Plane retired it.
+  $state = ''
+  try {
+    $json = & docker @composeArgs exec -T edge-agent edge-agent status 2>$null
+    if ($LASTEXITCODE -eq 0 -and $json) { $state = ($json | ConvertFrom-Json).state }
+  } catch { $state = '' }
+  if ($state -and $state -ne 'decommissioned' -and $state -ne 'revoked' -and -not $Force) {
+    Fail "The agent reports state '$state': the Control Plane has not decommissioned this deployment. Decommission it in the dashboard first (its identity is retired and the agent reports 'decommissioned'), or pass -Force to wipe anyway."
+  }
+  Step 'Wiping {{deploymentCode}}: containers, networks, data volumes (database, logs, backups, agent state), .\secrets and .env'
+  Write-Host "This permanently deletes the client's operational database on this host, including locally stored tickets and the encrypted PSA credentials."
+  Compose down --volumes --remove-orphans
+  Remove-Item -Recurse -Force -ErrorAction SilentlyContinue secrets, .env
+  $left = @(& docker volume ls -q --filter "name=^${project}_")
+  if ($left.Count -gt 0) { Fail "$($left.Count) volume(s) of $project still exist: $($left -join ', ')" }
+  Write-Host ''
+  Write-Host "Removed: no container, network, volume or secret of $project remains on this host."
+  Write-Host "Delete this folder when the package is no longer needed. The PSA Edge image can be removed with 'docker image rm' once no other deployment on this host uses it."
+} else {
+  Step 'Stopping {{deploymentCode}} (data volumes, .\secrets and .env are kept)'
+  Compose down --remove-orphans
+  Write-Host ''
+  Write-Host 'Stopped. scripts\install.ps1 brings the same installation back.'
+  Write-Host 'To delete its data as well: powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1 -Wipe -Confirm {{deploymentCode}}'
+}

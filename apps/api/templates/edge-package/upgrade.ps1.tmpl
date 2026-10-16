@@ -1,0 +1,54 @@
+# PSA Edge appliance upgrade — {{deploymentCode}} (Windows hosts with Docker Desktop).
+# Applies an image upgrade that the Control Plane issued as a signed remote command and that this
+# appliance's agent verified and staged. The appliance has no Docker socket by design, so the image
+# change happens here, on the host, under your control. Data volumes and secrets are untouched.
+#
+# Usage: powershell -ExecutionPolicy Bypass -File scripts\upgrade.ps1 [-Production] [-Image <repository:version[@sha256:digest]>]
+param([switch]$Production, [string]$Image = "")
+$ErrorActionPreference = 'Stop'
+Set-Location (Join-Path $PSScriptRoot '..')
+$compose = @('compose', '-f', 'compose.yaml')
+if ($Production) { $compose += @('-f', 'compose.production.yaml') }
+function Step($m) { Write-Host "`n==> $m" }
+function Fail($m) { Write-Error "ERROR: $m"; exit 1 }
+
+Step 'Checking prerequisites'
+if (-not (Get-Command docker -ErrorAction SilentlyContinue)) { Fail 'Docker is not installed on this host.' }
+docker info *> $null; if ($LASTEXITCODE -ne 0) { Fail 'Docker Engine is not running.' }
+if (-not (Test-Path '.env')) { Fail 'No .env in this directory: run scripts\install.ps1 first.' }
+
+if (-not $Image) {
+  Step 'Reading the staged upgrade order from the appliance'
+  $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("psacc-upgrade-" + [guid]::NewGuid())
+  New-Item -ItemType Directory -Force $tmp | Out-Null
+  & docker @compose cp 'edge-agent:/var/log/psa-edge/remote/upgrade-order.json' (Join-Path $tmp 'order.json') *> $null
+  if ($LASTEXITCODE -ne 0) { Fail "No staged upgrade order was found. Issue 'Upgrade appliance image' in the dashboard first, or pass -Image explicitly." }
+  $order = Get-Content (Join-Path $tmp 'order.json') -Raw | ConvertFrom-Json
+  Remove-Item -Recurse -Force $tmp
+  $Image = $order.image
+  if ([DateTime]::UtcNow -ge [DateTime]::Parse($order.expiresAt).ToUniversalTime()) { Fail "The staged order expired at $($order.expiresAt). Issue the upgrade again in the dashboard." }
+  Write-Host "  staged image: $Image"
+}
+if ($Image -notmatch '^[a-z0-9]+([._/-][a-z0-9]+)*:[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?(@sha256:[0-9a-f]{64})?$') { Fail "Not a valid image reference: $Image" }
+$repo = $Image.Split(':')[0]
+$expected = '{{edgeImageRef}}'.Split(':')[0]
+if ($repo -ne $expected) { Fail "The image repository ($repo) differs from this appliance's ($expected)." }
+if ($Production -and $Image -notmatch '@sha256:') { Fail 'Production appliances only run images pinned by digest.' }
+
+Step "Pulling $Image"
+docker image inspect $Image *> $null
+if ($LASTEXITCODE -ne 0) { docker pull $Image; if ($LASTEXITCODE -ne 0) { Fail 'The image could not be pulled.' } }
+if ($Image -match '@(sha256:[0-9a-f]{64})$') {
+  $digests = docker image inspect $Image --format '{{ .RepoDigests }}'
+  if ($digests -notmatch [regex]::Escape($Matches[1])) { Fail 'The pulled image does not carry the expected digest.' }
+}
+
+Step 'Recording the image in .env and recreating the services'
+$envText = Get-Content '.env' -Raw
+if ($envText -match '(?m)^PSA_EDGE_IMAGE=') { $envText = $envText -replace '(?m)^PSA_EDGE_IMAGE=.*$', "PSA_EDGE_IMAGE=$Image" } else { $envText = $envText.TrimEnd() + "`nPSA_EDGE_IMAGE=$Image`n" }
+Set-Content '.env' $envText -NoNewline
+& docker @compose up -d --remove-orphans
+& docker @compose ps
+
+Step 'Done'
+Write-Host "The appliance now runs $Image. The agent verifies the running version and reports the result to the Control Plane within its next heartbeat."

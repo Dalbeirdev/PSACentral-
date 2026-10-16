@@ -1,0 +1,4 @@
+$ psql (as the database owner, on the appliance)
+SELECT count(*) || ' of ' || (SELECT count(*) FROM pg_tables WHERE schemaname = 'public') || ' public tables readable by psa_edge_inspector' FROM pg_tables WHERE schemaname = 'public' AND has_table_privilege('psa_edge_inspector', (schemaname || '.' || tablename)::regclass, 'SELECT')
+--
+0 of 13 public tables readable by psa_edge_inspector

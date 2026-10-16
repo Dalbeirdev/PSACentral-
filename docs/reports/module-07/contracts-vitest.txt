@@ -1,0 +1,39 @@
+
+ RUN  v5.0.4 E:/PSA COntrole center/packages/contracts
+
+ ✓ src/deployments.test.ts > deployment schemas > create: OS must match fixed-OS environments; host labels are restricted; unknown fields rejected 10ms
+ ✓ src/deployments.test.ts > deployment schemas > update requires the version token 1ms
+ ✓ src/deployments.test.ts > deployment schemas > package generation: short-lived tokens only (1, 4, 24 or 72 hours), 24 by default; no replacement unless asked 1ms
+ ✓ src/deployments.test.ts > deployment schemas > revoke needs a reason of 3–200 characters 1ms
+ ✓ src/deployments.test.ts > deployment schemas > list query: known lifecycle/health/environment values and safe sort keys only 1ms
+ ✓ src/deployments.test.ts > deployment schemas > every lifecycle state has a label, and the allowed edge report types match the data boundary 1ms
+ ✓ src/psa.test.ts > provider descriptors > every provider has auth methods, config fields and unique keys 4ms
+ ✓ src/psa.test.ts > provider descriptors > the flat catalog is derived from the descriptors 1ms
+ ✓ src/psa.test.ts > buildConfigSchema > applies defaults, coerces numbers, drops blanks and hidden fields 4ms
+ ✓ src/psa.test.ts > buildConfigSchema > enforces conditional required fields, ranges, patterns, https and unknown keys 2ms
+ ✓ src/psa.test.ts > buildConfigSchema > visibility follows showWhen 0ms
+ ✓ src/psa.test.ts > buildConfigSchema > real provider schemas accept their documented examples 4ms
+ ✓ src/psa.test.ts > instance create schema > requires a client and a known provider and defaults services to none 2ms
+ ✓ src/contracts.test.ts > permission catalog > every system role only references known permissions 9ms
+ ✓ src/contracts.test.ts > permission catalog > super_admin holds every permission; read_only holds no write/manage permission 1ms
+ ✓ src/contracts.test.ts > permission catalog > read_only and auditor cannot change deployments 0ms
+ ✓ src/contracts.test.ts > permission catalog > technician is limited to assigned clients; administrators see all clients 0ms
+ ✓ src/contracts.test.ts > permission catalog > role permission lists contain no duplicates 0ms
+ ✓ src/contracts.test.ts > validation schemas > normalizes login email and rejects unknown keys 4ms
+ ✓ src/contracts.test.ts > validation schemas > password policy flags short, repeated and email-derived passwords 1ms
+ ✓ src/contracts.test.ts > validation schemas > list query enforces bounds and sort syntax 3ms
+ ✓ src/contracts.test.ts > validation schemas > user create requires roles and rejects duplicates 4ms
+ ✓ src/clients.test.ts > client schemas > normalizes optional blanks to undefined and validates references, countries, time zones and websites 33ms
+ ✓ src/clients.test.ts > client schemas > requires exactly one primary contact and unique emails 4ms
+ ✓ src/clients.test.ts > client schemas > rejects contract end before start and phone numbers that are not numbers 3ms
+ ✓ src/clients.test.ts > client schemas > uses friendly messages for missing fields 0ms
+ ✓ src/clients.test.ts > onboarding step schemas > has a schema for every data step 0ms
+ ✓ src/clients.test.ts > onboarding step schemas > PSA step carries provider config only; the endpoint is derived by the adapter, credentials are never accepted 1ms
+ ✓ src/clients.test.ts > onboarding step schemas > deployment OS must match fixed-OS environments 1ms
+ ✓ src/clients.test.ts > onboarding step schemas > default catalog: Help Desk is the only default; the 7 required PSA providers are present 1ms
+
+ Test Files  4 passed (4)
+      Tests  30 passed (30)
+   Start at  19:53:51
+   Duration  420ms (import 49%, transform 38%, tests 11%, worker 2%)
+

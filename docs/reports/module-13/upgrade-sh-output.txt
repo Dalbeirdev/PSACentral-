@@ -1,0 +1,19 @@
+$ scripts/upgrade.sh
+==> Checking prerequisites
+
+==> Reading the staged upgrade order from the appliance
+  staged image: psacc/psa-edge:0.1.0-next
+
+==> Pulling psacc/psa-edge:0.1.0-next
+
+==> Recording the image in .env and recreating the services
+NAME                              IMAGE                       COMMAND                  SERVICE         CREATED              STATUS                           PORTS
+psacc-dep-00034-edge-agent-1      psacc/psa-edge:0.1.0-next   "edge-agent"             edge-agent      4 seconds ago        Up 1 second                      8480/tcp
+psacc-dep-00034-edge-api-1        psacc/psa-edge:0.1.0-next   "edge-api"               edge-api        4 seconds ago        Up 1 second (health: starting)   127.0.0.1:18034->8480/tcp
+psacc-dep-00034-edge-backup-1     postgres:17-alpine          "/bin/sh /opt/psa-ed…"   edge-backup     About a minute ago   Up About a minute                5432/tcp
+psacc-dep-00034-edge-postgres-1   postgres:17-alpine          "docker-entrypoint.s…"   edge-postgres   About a minute ago   Up About a minute (healthy)      5432/tcp
+psacc-dep-00034-edge-worker-1     psacc/psa-edge:0.1.0-next   "edge-worker"            edge-worker     4 seconds ago        Up 1 second                      8480/tcp
+
+==> Done
+The appliance now runs psacc/psa-edge:0.1.0-next. The agent verifies the running version and reports the result to the Control Plane within its next heartbeat.
+Roll back with: scripts/upgrade.sh --image <previous image>

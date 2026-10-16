@@ -1,0 +1,42 @@
+{
+  "name": "psa-control-center",
+  "private": true,
+  "version": "0.1.0",
+  "description": "PSA Client Onboarding, Docker Deployment & Management Platform — Control Plane",
+  "type": "module",
+  "packageManager": "pnpm@11.15.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "setup": "node scripts/dev-setup.mjs",
+    "db:up": "node scripts/db.mjs up",
+    "db:down": "node scripts/db.mjs down",
+    "db:status": "node scripts/db.mjs status",
+    "db:psql": "node scripts/db.mjs psql",
+    "db:migrate": "pnpm --filter @psacc/api db:migrate",
+    "db:seed": "pnpm --filter @psacc/api db:seed",
+    "build": "pnpm -r build",
+    "dev": "pnpm --filter @psacc/contracts build && pnpm -r --parallel --filter @psacc/api --filter @psacc/web --filter @psacc/contracts dev",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "test:e2e": "pnpm --filter @psacc/web test:e2e",
+    "edge:tidy": "node scripts/edge.mjs tidy",
+    "edge:test": "node scripts/edge.mjs test",
+    "edge:build": "node scripts/edge.mjs build",
+    "edge:export": "node scripts/edge.mjs export",
+    "cp:setup": "node scripts/control-plane.mjs setup",
+    "cp:build": "node scripts/control-plane.mjs build",
+    "cp:up": "node scripts/control-plane.mjs up",
+    "cp:down": "node scripts/control-plane.mjs down",
+    "cp:destroy": "node scripts/control-plane.mjs destroy",
+    "cp:status": "node scripts/control-plane.mjs status",
+    "cp:logs": "node scripts/control-plane.mjs logs",
+    "cp:bootstrap": "node scripts/control-plane.mjs bootstrap",
+    "cp:backup": "node scripts/control-plane.mjs backup",
+    "cp:restore": "node scripts/control-plane.mjs restore",
+    "test:milestone": "pnpm --filter @psacc/api test:milestone",
+    "test:load": "pnpm --filter @psacc/api test:load"
+  }
+}

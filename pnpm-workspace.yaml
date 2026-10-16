@@ -1,0 +1,11 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Install-time scripts are denied unless listed as true here.
+allowBuilds:
+  '@scarf/scarf': false # telemetry pinger bundled with swagger-ui; not needed
+  '@swc/core': true
+  esbuild: true
+  sharp: true
+  unrs-resolver: true

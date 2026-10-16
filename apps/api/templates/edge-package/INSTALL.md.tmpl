@@ -1,0 +1,93 @@
+# Installing {{deploymentCode}} for {{clientName}}
+
+## 1. Prerequisites
+
+- A {{targetEnvironmentLabel}} running **{{targetOs}} / {{targetArch}}**{{hostLabelSuffix}}.
+- Docker Engine 24 or later with **Docker Compose v2** (`docker compose version`).
+  Windows hosts use Docker Desktop with Linux containers (WSL 2).
+- **An encrypted disk** for Docker's data directory (BitLocker, LUKS or an encrypted cloud volume).
+  Docker volumes are not encrypted by Docker itself; this appliance stores the client's
+  operational data and encrypted PSA credentials in them.
+- Outbound HTTPS from this host to:
+  - the Control Plane agent gateway: `{{agentGatewayUrl}}`
+  - the PSA API: `{{psaEndpoint}}`
+  - the image registry, for production installs.
+- No inbound ports. The local admin UI listens on `127.0.0.1:{{localAdminPort}}` only.
+
+The enrollment token in this package expires at **{{tokenExpiresAt}}** and works once. If it has
+expired, generate a new package in the dashboard; the old one cannot be reused.
+
+## 2. Check the package
+
+```bash
+sha256sum -c CHECKSUMS.sha256
+```
+
+The SHA-256 of the whole ZIP is shown on the deployment's Installation page in the dashboard.
+
+## 3. Install
+
+```bash
+scripts/install.sh              # development / test hosts
+scripts/install.sh --production # production: requires images pinned by digest
+```
+
+The script:
+
+1. checks Docker and the token expiry;
+2. creates this installation's secrets in `./secrets` (database passwords, data-encryption key).
+   They are generated here and never leave this host. Back them up with the volumes;
+3. creates `.env` from `config/edge.env.template` (local port, optional image overrides);
+4. validates the Compose configuration and starts the appliance as Compose project
+   `{{projectName}}`, with its own network, volumes and database.
+
+For production, set `PSA_EDGE_IMAGE` and `PSA_POSTGRES_IMAGE` in `.env` to the signed images
+pinned by digest (`repository@sha256:...`). `compose.production.yaml` refuses to start without them.
+
+## 4. Enter the PSA credentials
+
+Open the local admin UI at `http://127.0.0.1:{{localAdminPort}}` on this host and enter the
+{{psaProviderName}} credentials:
+
+{{credentialFieldsList}}
+
+They are encrypted with this host's data key and stored only in this appliance's database.
+
+## 5. Verify
+
+```bash
+scripts/verify.sh
+```
+
+Each check prints PASS or FAIL. This verifies the local installation only. In the dashboard the
+deployment moves to **Enrolled** when the agent has connected and registered installation
+`{{installationId}}`, and to **Verified** when its health reports pass.
+
+After the appliance has enrolled, delete the ZIP you downloaded: its token cannot be used again.
+
+## 6. Upgrades (remote-managed)
+
+The dashboard can issue **Upgrade appliance image** as a signed remote command. The appliance's agent verifies the signature and stages the order; it never changes containers itself, because the appliance has no Docker socket by design. Apply it on this host from the package directory:
+
+```bash
+scripts/upgrade.sh
+```
+
+Windows hosts: `powershell -ExecutionPolicy Bypass -File scripts\upgrade.ps1`. The script reads the staged order, pulls the image (checking the digest when one is pinned), records it in `.env` and recreates the services. Data volumes and secrets are untouched. The agent reports the new version to the Control Plane with its next heartbeat. Roll back with `scripts/upgrade.sh --image <previous image>`.
+
+## 7. Decommissioning and removal
+
+When the deployment ends, the Control Plane administrator **decommissions** it first: its identity is retired, the appliance stops PSA work at its next heartbeat and shows *Decommissioned* in the local admin. Then, on this host, `scripts/uninstall.sh` stops the appliance and keeps its data, and `scripts/uninstall.sh --wipe --confirm {{deploymentCode}}` deletes the data volumes, `./secrets` and `.env` (Windows: `scripts\uninstall.ps1 -Wipe -Confirm {{deploymentCode}}`). The script refuses to wipe while the agent still reports an active identity. See **UNINSTALL.md**.
+
+## Data and persistence
+
+| Volume | Contents |
+|---|---|
+| `{{projectName}}_pgdata` | PostgreSQL operational database |
+| `{{projectName}}_edge-logs` | Local integration logs and the agent's report buffer |
+| `{{projectName}}_edge-backups` | Local database backups |
+| `{{projectName}}_agent-state` | Agent machine certificate (after enrollment) |
+
+Data lives in these volumes, never in the image, so restarting or upgrading containers keeps it.
+If the Control Plane is unreachable, the appliance keeps working and the agent sends its buffered
+reports when the connection returns.

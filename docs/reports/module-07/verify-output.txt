@@ -1,0 +1,17 @@
+$ scripts/verify.sh   (exit 0)
+Verifying DEP-00030 (installation 9b9e52c0-035c-4562-aaab-081e4f79cdf6)
+PASS  Docker Engine reachable
+PASS  Compose configuration valid
+PASS  Secrets present on this host
+PASS  Database container running
+PASS  PostgreSQL accepting connections
+PASS  Database migrations completed
+PASS  Application tables present (at least 12)
+PASS  Edge API running
+PASS  Edge worker running
+PASS  Edge agent running
+PASS  Backup service running
+PASS  Edge API healthy
+PASS  Agent enrolled with the Control Plane
+
+13 passed, 0 failed

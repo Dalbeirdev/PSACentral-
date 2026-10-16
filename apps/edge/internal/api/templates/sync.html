@@ -1,0 +1,47 @@
+{{template "head" .}}
+{{with .Data}}
+<h1>Synchronization</h1>
+<p class="lead">The worker mirrors {{.Provider}} tickets into this appliance and pushes local changes back. Every run is recorded here; the Control Plane receives only these counts and statuses.</p>
+{{if .Decommissioned}}<div class="alert error" role="alert" data-testid="decommissioned-banner"><strong>Decommissioned by the provider.</strong> Ticket synchronization has stopped for good; tickets and data stay on this host until the operator removes the appliance (<a href="/removal">Removal</a>).</div>{{end}}
+{{if .Suspended}}<div class="alert error" role="alert" data-testid="suspended-banner"><strong>Suspended by the provider.</strong> PSA connection tests and ticket synchronization are paused until the deployment is resumed from the Control Plane. Tickets and this page stay available; nothing was deleted.</div>{{end}}
+{{if not .Supported}}<div class="alert error" role="alert">Ticket synchronization is not implemented for {{.Provider}} in this version. Connection tests work; tickets are not exchanged.</div>{{end}}
+{{if ne .ConnectionStatus "verified"}}<div class="alert info">The PSA connection is <strong>{{.ConnectionStatus}}</strong>. Synchronization runs only once a connection test has verified it (<a href="/credentials#connection">PSA credentials</a>).</div>{{end}}
+<div class="grid">
+  <section class="card" aria-labelledby="s-h">
+    <h2 id="s-h">State</h2>
+    <dl>
+      <div><dt>Last successful run</dt><dd class="mono">{{fmtTime .LastSucceededAt}}</dd></div>
+      <div><dt>Inbound watermark (changes after this time are fetched, minus the overlap)</dt><dd class="mono">{{fmtTime .Watermark}}</dd></div>
+      <div><dt>Runs in the last 24 h</dt><dd>{{.Runs24h}}{{if .Failed24h}} · <span class="pill err">{{.Failed24h}} failed</span>{{end}}</dd></div>
+      <div><dt>Local changes waiting to be pushed</dt><dd>{{.Pending}}</dd></div>
+      <div><dt>Conflicts in the last 24 h</dt><dd>{{.Conflicts24h}}</dd></div>
+      <div><dt>Tickets that stay local</dt><dd>{{.LocalOnly}}{{if .PushFailed}} · <span class="pill err">{{.PushFailed}} push failed</span>{{end}}</dd></div>
+      <div><dt>Schedule</dt><dd>every {{.Interval}} while verified</dd></div>
+    </dl>
+    <form method="post" action="/sync/run">
+      <input type="hidden" name="csrf" value="{{$.Session.CSRF}}">
+      <button class="btn" type="submit" {{if or (not .Supported) (ne .ConnectionStatus "verified") .Suspended .Decommissioned}}disabled{{end}}>Sync now</button>
+      {{if .Requested}}<span class="pill warn">requested: {{.Requested}}</span>{{end}}
+    </form>
+    <p class="hint">“Sync now” asks the worker to run within its next tick; the UI itself never calls the PSA.</p>
+  </section>
+</div>
+<section class="card" aria-labelledby="r-h">
+  <h2 id="r-h">Recent runs</h2>
+  {{if .Runs}}<div class="scroll"><table>
+    <thead><tr><th>Started</th><th>Trigger</th><th>Status</th><th>Received</th><th>Sent</th><th>Failed</th><th>Pages</th><th>Error</th></tr></thead>
+    <tbody>
+    {{range .Runs}}
+      <tr>
+        <td class="mono">{{ts .StartedAt}}</td>
+        <td>{{.Trigger}}</td>
+        <td><span class="pill {{if eq .Status "succeeded"}}ok{{else if eq .Status "failed"}}err{{else if eq .Status "partial"}}warn{{else}}off{{end}}">{{.Status}}</span></td>
+        <td>{{.ItemsReceived}}</td><td>{{.ItemsSent}}</td><td>{{.ItemsFailed}}</td><td>{{.Pages}}</td>
+        <td>{{if .ErrorCode}}<span class="mono">{{.ErrorCode}}</span>{{if .ErrorMessage}} — {{.ErrorMessage}}{{end}}{{else}}—{{end}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table></div>{{else}}<p class="hint">No run yet.</p>{{end}}
+</section>
+{{end}}
+{{template "foot" .}}

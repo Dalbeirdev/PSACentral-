@@ -1,0 +1,41 @@
+
+ RUN  v5.0.4 E:/PSA COntrole center/apps/web
+
+ ✓ src/lib/database.test.ts > database explorer helpers > round-trips schema.table references and rejects malformed ones 2ms
+ ✓ src/lib/database.test.ts > database explorer helpers > never presents an estimate as an exact count 13ms
+ ✓ src/lib/database.test.ts > database explorer helpers > derives a table status from what was actually reported 0ms
+ ✓ src/lib/database.test.ts > database explorer helpers > formats sizes up to gigabytes 0ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > /audit?outcome=failure → /audit?outcome=failure 1ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > /settings/users → /settings/users 0ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > //evil.example → null 0ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > /\evil.example → null 0ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > https://evil.example → null 0ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > javascript:alert(1) → null 0ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > /login?next=/x → null 0ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) >  → null 0ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > undefined → null 0ms
+ ✓ src/lib/lib.test.ts > formatting > formats timestamps in the requested time zone 16ms
+ ✓ src/lib/lib.test.ts > formatting > produces relative times, greetings, initials and percentages 1ms
+ ✓ src/lib/lib.test.ts > query helpers > merges params and drops empty values 0ms
+ ✓ src/lib/lib.test.ts > query helpers > keeps only known string params of bounded length 1ms
+ ✓ src/lib/lib.test.ts > navigation & health constants > has the 12 required sidebar entries, each planned one described 0ms
+ ✓ src/lib/lib.test.ts > navigation & health constants > defines a color and label for every health state 0ms
+ ✓ src/lib/services.test.ts > service helpers > groups by category in catalog order 2ms
+ ✓ src/lib/services.test.ts > service helpers > derives dependency support from the provider adapter capabilities 0ms
+ ✓ src/lib/services.test.ts > service helpers > round-trips configuration values through form strings 0ms
+ ✓ src/lib/services.test.ts > service helpers > summarizes a requirement for lists 0ms
+ ✓ src/lib/psa-config.test.ts > initialConfig > fills every descriptor field, applying defaults, so a new form starts complete 2ms
+ ✓ src/lib/psa-config.test.ts > initialConfig > turns stored numbers into form strings and ignores keys the descriptor does not know 1ms
+ ✓ src/lib/psa-config.test.ts > initialConfig > round-trips: stored config -> form values -> provider schema gives the same config back 9ms
+ ✓ src/lib/wizard.test.ts > wizard step availability > has the 10 steps in order 2ms
+ ✓ src/lib/wizard.test.ts > wizard step availability > a new draft only opens step 1 0ms
+ ✓ src/lib/wizard.test.ts > wizard step availability > steps unlock in order and review/create need every section 0ms
+ ✓ src/lib/wizard.test.ts > wizard step availability > after creation, steps 1–7 close and 8–10 open; abandoned drafts lock everything 0ms
+ ✓ src/lib/wizard.test.ts > calendar dates > render without time-zone shifting and count days 15ms
+ ✓ src/lib/lib.test.ts > formatBytes > formats package sizes 184ms
+
+ Test Files  5 passed (5)
+      Tests  32 passed (32)
+   Start at  22:13:03
+   Duration  378ms (import 49%, tests 31%, transform 17%, worker 3%)
+

@@ -1,0 +1,26 @@
+
+ RUN  v5.0.4 E:/PSA COntrole center/packages/contracts
+
+ ✓ src/contracts.test.ts > permission catalog > every system role only references known permissions 4ms
+ ✓ src/contracts.test.ts > permission catalog > super_admin holds every permission; read_only holds no write/manage permission 1ms
+ ✓ src/contracts.test.ts > permission catalog > read_only and auditor cannot change deployments 0ms
+ ✓ src/contracts.test.ts > permission catalog > technician is limited to assigned clients; administrators see all clients 0ms
+ ✓ src/contracts.test.ts > permission catalog > role permission lists contain no duplicates 0ms
+ ✓ src/contracts.test.ts > validation schemas > normalizes login email and rejects unknown keys 2ms
+ ✓ src/contracts.test.ts > validation schemas > password policy flags short, repeated and email-derived passwords 1ms
+ ✓ src/contracts.test.ts > validation schemas > list query enforces bounds and sort syntax 2ms
+ ✓ src/contracts.test.ts > validation schemas > user create requires roles and rejects duplicates 2ms
+ ✓ src/clients.test.ts > client schemas > normalizes optional blanks to undefined and validates references, countries, time zones and websites 21ms
+ ✓ src/clients.test.ts > client schemas > requires exactly one primary contact and unique emails 3ms
+ ✓ src/clients.test.ts > client schemas > rejects contract end before start and phone numbers that are not numbers 3ms
+ ✓ src/clients.test.ts > client schemas > uses friendly messages for missing fields 0ms
+ ✓ src/clients.test.ts > onboarding step schemas > has a schema for every data step 0ms
+ ✓ src/clients.test.ts > onboarding step schemas > PSA API endpoints must be https and must not embed credentials 1ms
+ ✓ src/clients.test.ts > onboarding step schemas > deployment OS must match fixed-OS environments 1ms
+ ✓ src/clients.test.ts > onboarding step schemas > default catalog: Help Desk is the only default; the 7 required PSA providers are present 1ms
+
+ Test Files  2 passed (2)
+      Tests  17 passed (17)
+   Start at  15:21:49
+   Duration  282ms (import 64%, transform 18%, tests 15%, worker 3%)
+

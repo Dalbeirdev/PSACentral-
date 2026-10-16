@@ -1,0 +1,149 @@
+{
+  "agents": 1000,
+  "cycles": [
+    {
+      "cycle": 1,
+      "heartbeat": {
+        "count": 1000,
+        "p50": 309,
+        "p95": 416,
+        "p99": 507,
+        "max": 532,
+        "mean": 316
+      },
+      "reports": {
+        "count": 1000,
+        "p50": 229,
+        "p95": 324,
+        "p99": 391,
+        "max": 425,
+        "mean": 225
+      },
+      "cycleSeconds": 11,
+      "requestsPerSecond": 182,
+      "retries": 0,
+      "sweepMs": 5218,
+      "sweptOrganizations": 1,
+      "fleetQueryMs": 52,
+      "explorerQueryMs": 45,
+      "fleetRows": 1000,
+      "healthy": 1000
+    },
+    {
+      "cycle": 2,
+      "heartbeat": {
+        "count": 1000,
+        "p50": 322,
+        "p95": 423,
+        "p99": 459,
+        "max": 523,
+        "mean": 322
+      },
+      "reports": {
+        "count": 1000,
+        "p50": 231,
+        "p95": 316,
+        "p99": 384,
+        "max": 395,
+        "mean": 224
+      },
+      "cycleSeconds": 11,
+      "requestsPerSecond": 181,
+      "retries": 0,
+      "sweepMs": 4577,
+      "sweptOrganizations": 1,
+      "fleetQueryMs": 62,
+      "explorerQueryMs": 54,
+      "fleetRows": 1000,
+      "healthy": 1000
+    },
+    {
+      "cycle": 3,
+      "heartbeat": {
+        "count": 1000,
+        "p50": 311,
+        "p95": 402,
+        "p99": 434,
+        "max": 459,
+        "mean": 307
+      },
+      "reports": {
+        "count": 1000,
+        "p50": 213,
+        "p95": 298,
+        "p99": 358,
+        "max": 394,
+        "mean": 211
+      },
+      "cycleSeconds": 10.5,
+      "requestsPerSecond": 191,
+      "retries": 0,
+      "sweepMs": 4816,
+      "sweptOrganizations": 1,
+      "fleetQueryMs": 55,
+      "explorerQueryMs": 46,
+      "fleetRows": 1000,
+      "healthy": 1000
+    }
+  ],
+  "concurrency": 50,
+  "startedAt": "2026-10-14T18:00:21.165Z",
+  "node": "v24.14.0",
+  "platform": "win32 x64",
+  "enrollmentFailures": 0,
+  "enrollmentRetries": 0,
+  "enrollment": {
+    "count": 1000,
+    "p50": 530,
+    "p95": 812,
+    "p99": 976,
+    "max": 1251,
+    "mean": 558,
+    "totalSeconds": 28.1,
+    "perSecond": 36
+  },
+  "failedRequests": 0,
+  "storage": {
+    "tables": [
+      {
+        "table": "agent_certificates",
+        "bytes": 778240,
+        "rows": 1000
+      },
+      {
+        "table": "deployment_health_events",
+        "bytes": 598016,
+        "rows": 1862
+      },
+      {
+        "table": "deployment_heartbeats",
+        "bytes": 835584,
+        "rows": 3041
+      },
+      {
+        "table": "deployment_report_latest",
+        "bytes": 6332416,
+        "rows": 9459
+      },
+      {
+        "table": "deployment_reports",
+        "bytes": 15114240,
+        "rows": 27081
+      },
+      {
+        "table": "deployment_tables",
+        "bytes": 24576,
+        "rows": 0
+      },
+      {
+        "table": "deployments",
+        "bytes": 1327104,
+        "rows": 1028
+      }
+    ],
+    "databaseBytes": 87758515,
+    "reportBytesPerAgentPerCycle": 5038,
+    "estimatedReportBytesPerAgentPerDayAt60s": 7254835
+  },
+  "finishedAt": "2026-10-14T18:01:36.701Z"
+}

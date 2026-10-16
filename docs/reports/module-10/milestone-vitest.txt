@@ -1,0 +1,16 @@
+
+ RUN  v5.0.4 E:/PSA COntrole center/apps/api
+
+ ✓ |milestone| test/milestone/milestone.test.ts > first milestone: two client appliances on one containerized Control Plane > one dashboard shows both clients with different PSA providers, independent databases and live health 2573ms
+ ✓ |milestone| test/milestone/milestone.test.ts > first milestone: two client appliances on one containerized Control Plane > data boundary: ticket content on an appliance never reaches the Control Plane, only counts do 13332ms
+ ✓ |milestone| test/milestone/milestone.test.ts > first milestone: two client appliances on one containerized Control Plane > invalid token and identity are refused by the containerized gateway 36ms
+ ✓ |milestone| test/milestone/milestone.test.ts > first milestone: two client appliances on one containerized Control Plane > database stop degrades the deployment to critical from real checks and recovers 28148ms
+ ✓ |milestone| test/milestone/milestone.test.ts > first milestone: two client appliances on one containerized Control Plane > restart persistence: an appliance keeps its identity, data and certificate across down/up 27978ms
+ ✓ |milestone| test/milestone/milestone.test.ts > first milestone: two client appliances on one containerized Control Plane > Control Plane outage: appliances keep working and the history backfills when it returns 70264ms
+ ✓ |milestone| test/milestone/milestone.test.ts > first milestone: two client appliances on one containerized Control Plane > backup and restore runbook: a client created after the backup disappears, both appliances stay healthy 22927ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  06:05:44
+   Duration  250.75s (tests 99%, import 1%)
+

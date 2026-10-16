@@ -1,0 +1,147 @@
+
+ RUN  v5.0.4 E:/PSA COntrole center/apps/api
+
+ ✓ |unit| test/unit/security-primitives.test.ts > TOTP (RFC 6238 / RFC 4226) > matches the RFC 6238 vector at T=59 2ms
+ ✓ |unit| test/unit/security-primitives.test.ts > TOTP (RFC 6238 / RFC 4226) > matches the RFC 6238 vector at T=1111111109 0ms
+ ✓ |unit| test/unit/security-primitives.test.ts > TOTP (RFC 6238 / RFC 4226) > matches the RFC 6238 vector at T=1111111111 0ms
+ ✓ |unit| test/unit/security-primitives.test.ts > TOTP (RFC 6238 / RFC 4226) > matches the RFC 6238 vector at T=1234567890 0ms
+ ✓ |unit| test/unit/security-primitives.test.ts > TOTP (RFC 6238 / RFC 4226) > matches the RFC 6238 vector at T=2000000000 0ms
+ ✓ |unit| test/unit/security-primitives.test.ts > TOTP (RFC 6238 / RFC 4226) > matches the RFC 6238 vector at T=20000000000 0ms
+ ✓ |unit| test/unit/security-primitives.test.ts > TOTP (RFC 6238 / RFC 4226) > matches RFC 4226 HOTP vectors 0ms
+ ✓ |unit| test/unit/security-primitives.test.ts > TOTP (RFC 6238 / RFC 4226) > accepts ±1 step, rejects ±2 steps, and returns the matched step 1ms
+ ✓ |unit| test/unit/security-primitives.test.ts > TOTP (RFC 6238 / RFC 4226) > round-trips base32 and builds a standards-compliant otpauth URI 1ms
+ ✓ |unit| test/unit/security-primitives.test.ts > TOTP (RFC 6238 / RFC 4226) > generates unique recovery codes and hashes them case/format-insensitively 1ms
+ ✓ |unit| test/unit/security-primitives.test.ts > password hashing (scrypt) > verifies the right password and rejects the wrong one 820ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > environment configuration > loads development defaults with insecure-transport cookie names 4ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > environment configuration > uses __Host- cookies and Secure in production 1ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > environment configuration > refuses unsafe production configuration 0 1ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > environment configuration > refuses unsafe production configuration 1 0ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > environment configuration > refuses unsafe production configuration 2 0ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > environment configuration > refuses unsafe production configuration 3 0ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > environment configuration > rejects weak or malformed secrets 1ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > authorization declarations (default deny) > every route declares @Public, @AuthenticatedOnly or @RequirePermissions 1ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > authorization declarations (default deny) > only health, system info and login are public 0ms
+ ✓ |unit| test/unit/config-and-routes.test.ts > dashboard timeline pivot > zero-fills missing states and keeps empty days 0ms
+ ✓ |unit| test/unit/security-primitives.test.ts > password hashing (scrypt) > uses a unique salt per hash 512ms
+ ✓ |unit| test/unit/security-primitives.test.ts > password hashing (scrypt) > rejects malformed or abusive encodings without throwing 0ms
+ ✓ |unit| test/unit/security-primitives.test.ts > password hashing (scrypt) > generates policy-compliant temporary passwords 0ms
+ ✓ |unit| test/unit/security-primitives.test.ts > SecretBox (AES-256-GCM envelope) > round-trips and never contains the plaintext 1ms
+ ✓ |unit| test/unit/security-primitives.test.ts > SecretBox (AES-256-GCM envelope) > fails when the ciphertext is bound to a different row (associated data) 1ms
+ ✓ |unit| test/unit/security-primitives.test.ts > SecretBox (AES-256-GCM envelope) > fails on tampering and with a different key 1ms
+ ✓ |unit| test/unit/security-primitives.test.ts > SecretBox (AES-256-GCM envelope) > safeEqual compares correctly 0ms
+ ✓ |unit| test/unit/security-primitives.test.ts > log secret masking > redacts sensitive keys recursively and connection-string passwords 1ms
+ ✓ |integration| test/integration/auth.test.ts > public endpoints > liveness and readiness report a migrated, reachable database 46ms
+ ✓ |integration| test/integration/auth.test.ts > public endpoints > system info exposes only non-sensitive fields 4ms
+ ✓ |integration| test/integration/auth.test.ts > public endpoints > sets security headers and no-store on API responses 3ms
+ ✓ |integration| test/integration/auth.test.ts > sign-in > rejects requests without a session (default deny) with problem+json 3ms
+ ✓ |integration| test/integration/auth.test.ts > sign-in > returns the same generic error for a wrong password and an unknown account 799ms
+ ✓ |integration| test/integration/auth.test.ts > sign-in > validates input and rejects unknown fields 4ms
+ ✓ |integration| test/integration/auth.test.ts > sign-in > issues an HttpOnly SameSite session cookie and a readable CSRF cookie; stores only the token hash 305ms
+ ✓ |integration| test/integration/auth.test.ts > sign-in > /auth/me never leaks password hashes, MFA secrets or token hashes 300ms
+ ✓ |integration| test/integration/auth.test.ts > sign-in > logout revokes the session server-side 283ms
+ ✓ |integration| test/integration/auth.test.ts > sign-in > expired sessions are rejected 397ms
+ ✓ |integration| test/integration/auth.test.ts > sign-in > records successful and failed sign-ins in the audit trail 312ms
+ ✓ |integration| test/integration/auth.test.ts > account lockout > locks after 5 failures, refuses even the correct password, and audits the lock 2525ms
+ ✓ |integration| test/integration/auth.test.ts > CSRF protection > rejects state-changing requests without the CSRF header 302ms
+ ✓ |integration| test/integration/auth.test.ts > CSRF protection > rejects a CSRF token from another session 612ms
+ ✓ |integration| test/integration/auth.test.ts > CSRF protection > rejects cross-origin requests, including login 355ms
+ ✓ |integration| test/integration/auth.test.ts > rate limiting > returns 429 after the per-IP login limit 878ms
+ ✓ |integration| test/integration/auth.test.ts > multi-factor authentication > enrolls TOTP: wrong code is rejected (and audited), correct code enables MFA and rotates the session 1598ms
+ ✓ |integration| test/integration/auth.test.ts > multi-factor authentication > requires the second factor at sign-in; pending sessions cannot reach business endpoints 303ms
+ ✓ |integration| test/integration/auth.test.ts > multi-factor authentication > rejects a replayed TOTP code 5156ms
+ ✓ |integration| test/integration/auth.test.ts > multi-factor authentication > accepts a recovery code exactly once 668ms
+ ✓ |integration| test/integration/auth.test.ts > multi-factor authentication > revokes the pending session after 5 wrong codes 400ms
+ ✓ |integration| test/integration/auth.test.ts > forced password change & MFA-required policy > admin-created users get a temporary password and must change it; weak passwords are refused 1740ms
+ ✓ |integration| test/integration/auth.test.ts > forced password change & MFA-required policy > with AUTH_MFA_REQUIRED, users without MFA can only reach enrollment 364ms
+ ✓ |integration| test/integration/auth.test.ts > forced password change & MFA-required policy > rejects an invalid time zone on profile update 315ms
+ ✓ |integration| test/integration/clients.test.ts > client directory > paginates, sorts and counts on the server 447ms
+ ✓ |integration| test/integration/clients.test.ts > client directory > searches name, legal name, reference, code and city; filters by status, country, PSA and health 369ms
+ ✓ |integration| test/integration/clients.test.ts > client directory > summaries include PSA providers, deployment health and account manager 295ms
+ ✓ |integration| test/integration/clients.test.ts > client directory > rejects invalid filters and sort fields 310ms
+ ✓ |integration| test/integration/clients.test.ts > client directory > technicians only see assigned clients, including on direct access 427ms
+ ✓ |integration| test/integration/clients.test.ts > client detail & update > returns management info, the primary contact, counts and a version token 402ms
+ ✓ |integration| test/integration/clients.test.ts > client detail & update > read-only users and technicians cannot edit 1058ms
+ ✓ |integration| test/integration/clients.test.ts > client detail & update > updates fields, records a diff in the client activity, and returns a new version 415ms
+ ✓ |integration| test/integration/clients.test.ts > client detail & update > rejects a stale version (optimistic concurrency) with 409 418ms
+ ✓ |integration| test/integration/clients.test.ts > client detail & update > enforces unique client references per organization, case-insensitively 465ms
+ ✓ |integration| test/integration/clients.test.ts > client detail & update > validates { company: [Object] } → error at company.website 389ms
+ ✓ |integration| test/integration/clients.test.ts > client detail & update > validates { company: { countryCode: 'XX' } } → error at company.countryCode 411ms
+ ✓ |integration| test/integration/clients.test.ts > client detail & update > validates { company: [Object] } → error at company.timezone 385ms
+ ✓ |integration| test/integration/clients.test.ts > client detail & update > validates { company: [Object] } → error at company.businessType 376ms
+ ✓ |integration| test/integration/clients.test.ts > client detail & update > validates { management: [Object] } → error at management.contractEndDate 367ms
+ ✓ |integration| test/integration/clients.test.ts > client detail & update > validates { management: [Object] } → error at management.accountManagerUserId 443ms
+ ✓ |integration| test/integration/clients.test.ts > client contacts > adds a contact; marking it primary demotes the previous primary 398ms
+ ✓ |integration| test/integration/clients.test.ts > client contacts > protects the primary contact and rejects duplicate emails 414ms
+ ✓ |integration| test/integration/clients.test.ts > client contacts > validates contact input 353ms
+ ✓ |integration| test/integration/clients.test.ts > client contacts > contacts are protected by row-level security 75ms
+ ✓ |integration| test/integration/clients.test.ts > services > serves the database-driven catalog with Help Desk as the default 311ms
+ ✓ |integration| test/integration/clients.test.ts > services > assigns services to a client and audits the change 376ms
+ ✓ |integration| test/integration/clients.test.ts > services > rejects unknown services and services from another organization 421ms
+ ✓ |integration| test/integration/clients.test.ts > technician client assignments > an administrator changes which clients a technician can see 2160ms
+ ✓ |integration| test/integration/clients.test.ts > cross-organization access > organization B cannot read or modify organization A clients 443ms
+ ✓ |integration| test/integration/clients.test.ts > last Super Administrator protection > a custom role with roles.manage cannot disable or demote the only active Super Administrator 1961ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > quinn.viewer@psacc.test GET /users → 403 344ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > quinn.viewer@psacc.test GET /audit-events → 403 293ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > quinn.viewer@psacc.test GET /roles → 403 299ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > quinn.viewer@psacc.test GET /system/status → 403 299ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > riley.technician@psacc.test GET /users → 403 308ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > riley.technician@psacc.test GET /audit-events → 403 296ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > casey.service@psacc.test GET /audit-events → 403 315ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > taylor.audit@psacc.test GET /audit-events → 200 317ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > taylor.audit@psacc.test GET /users → 200 296ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > sam.security@psacc.test GET /audit-events → 200 289ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > jordan.ops@psacc.test GET /users → 200 291ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > morgan.tech@psacc.test GET /users → 403 284ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > read-only and auditor users cannot create users (and the denial is audited) 843ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > every role can read the dashboard 2493ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > an Operations Administrator cannot grant Super Administrator or modify a Super Administrator 577ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > nobody can change their own roles or status 322ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > role changes take effect immediately and revoke the target user’s sessions 1874ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > disabling a user blocks sign-in and ends their sessions 1201ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > validates user administration input 982ms
+ ✓ |integration| test/integration/rbac.test.ts > role-based access control (server-enforced) > supports server-side search, filtering, sorting and pagination of users 354ms
+ ✓ |integration| test/integration/rbac.test.ts > client scope (technicians see assigned clients only) > technician dashboard and search are limited to the 4 assigned clients 794ms
+ ✓ |integration| test/integration/onboarding.test.ts > onboarding permissions > quinn.viewer@psacc.test cannot start an onboarding 306ms
+ ✓ |integration| test/integration/onboarding.test.ts > onboarding permissions > riley.technician@psacc.test cannot start an onboarding 286ms
+ ✓ |integration| test/integration/onboarding.test.ts > onboarding permissions > taylor.audit@psacc.test cannot start an onboarding 300ms
+ ✓ |integration| test/integration/onboarding.test.ts > onboarding permissions > morgan.tech@psacc.test cannot start an onboarding 310ms
+ ✓ |integration| test/integration/onboarding.test.ts > onboarding permissions > a Service Manager can prepare a draft but cannot create PSA/deployment records 743ms
+ ✓ |integration| test/integration/onboarding.test.ts > draft persistence & validation > saves steps server-side and resumes from the next step 661ms
+ ✓ |integration| test/integration/onboarding.test.ts > draft persistence & validation > returns field-level errors with paths 343ms
+ ✓ |integration| test/integration/onboarding.test.ts > draft persistence & validation > rejects stale versions (two tabs) with 409 340ms
+ ✓ |integration| test/integration/onboarding.test.ts > draft persistence & validation > checks the client reference against existing clients at step 1 339ms
+ ✓ |integration| test/integration/onboarding.test.ts > draft persistence & validation > enforces step order and provider-specific rules; changing provider clears the PSA configuration 403ms
+ ✓ |integration| test/integration/onboarding.test.ts > draft persistence & validation > validates services and deployment preferences 397ms
+ ✓ |integration| test/integration/onboarding.test.ts > draft persistence & validation > cannot complete until every section is saved 357ms
+ ✓ |integration| test/integration/onboarding.test.ts > completing an onboarding (Test Client A profile: Autotask; Help Desk + Endpoint Management) > atomically creates client, contacts, PSA instance, services and a draft deployment 481ms
+ ✓ |integration| test/integration/onboarding.test.ts > completing an onboarding (Test Client A profile: Autotask; Help Desk + Endpoint Management) > is idempotent and locks the draft afterwards 471ms
+ ✓ |integration| test/integration/onboarding.test.ts > completing an onboarding (Test Client A profile: Autotask; Help Desk + Endpoint Management) > two drafts with the same reference: the second completion is refused 515ms
+ ✓ |integration| test/integration/onboarding.test.ts > completing an onboarding (Test Client A profile: Autotask; Help Desk + Endpoint Management) > abandoned drafts are kept but cannot be completed 442ms
+ ✓ |integration| test/integration/onboarding.test.ts > completing an onboarding (Test Client A profile: Autotask; Help Desk + Endpoint Management) > Test Client B profile (ConnectWise; Help Desk + Security Monitoring) gets independent records 444ms
+ ✓ |integration| test/integration/onboarding.test.ts > onboarding isolation > organization B cannot see or use organization A drafts 740ms
+ ✓ |integration| test/integration/isolation.test.ts > organization isolation through the API > organization A cannot see organization B data (search, dashboard, users, audit) 559ms
+ ✓ |integration| test/integration/isolation.test.ts > organization isolation through the API > organization B sees only its own single client 408ms
+ ✓ |integration| test/integration/isolation.test.ts > organization isolation enforced by PostgreSQL row-level security > with no tenant context, the application role sees zero rows in every tenant table (fail closed) 26ms
+ ✓ |integration| test/integration/isolation.test.ts > organization isolation enforced by PostgreSQL row-level security > an unfiltered query under org A context returns only org A rows 59ms
+ ✓ |integration| test/integration/isolation.test.ts > organization isolation enforced by PostgreSQL row-level security > cannot write into, update or delete another organization’s rows 67ms
+ ✓ |integration| test/integration/isolation.test.ts > organization isolation enforced by PostgreSQL row-level security > technician scope is enforced in the database, not only in the API 70ms
+ ✓ |integration| test/integration/database.test.ts > migrations > created every expected table with row-level security on tenant tables 24ms
+ ✓ |integration| test/integration/database.test.ts > migrations > is idempotent: a second run applies nothing 100ms
+ ✓ |integration| test/integration/database.test.ts > migrations > refuses to run when an applied migration was modified 49ms
+ ✓ |integration| test/integration/database.test.ts > migrations > syncs the permission catalog and the 8 system roles as reference data 34ms
+ ✓ |integration| test/integration/database.test.ts > migrations > seeding refuses to run outside development/test 1ms
+ ✓ |integration| test/integration/database.test.ts > least-privilege application role > psacc_app cannot bypass RLS and is not a superuser 11ms
+ ✓ |integration| test/integration/database.test.ts > least-privilege application role > cannot change the schema 32ms
+ ✓ |integration| test/integration/database.test.ts > least-privilege application role > audit events and health events are append-only for the application 81ms
+ ✓ |integration| test/integration/database.test.ts > least-privilege application role > cannot read global identity data through the auth functions beyond what login needs 16ms
+ ✓ |integration| test/integration/database.test.ts > data integrity constraints > client references are unique per organization, case-insensitively 80ms
+ ✓ |integration| test/integration/database.test.ts > data integrity constraints > a deployment cannot report health before it has enrolled 110ms
+ ✓ |integration| test/integration/database.test.ts > data integrity constraints > PSA connectivity cannot be marked verified without a recorded successful test 50ms
+ ✓ |integration| test/integration/database.test.ts > data integrity constraints > contract end date cannot precede the start date 48ms
+ ✓ |integration| test/integration/database.test.ts > data integrity constraints > a deployment can only bind a PSA instance belonging to the same client 52ms
+
+ Test Files  8 passed (8)
+      Tests  138 passed (138)
+   Start at  15:20:39
+   Duration  68.38s (tests 89%, import 11%)
+

@@ -1,0 +1,48 @@
+# Removing {{deploymentCode}}
+
+Removal always happens in two places, in this order:
+
+1. **Control Plane first** — your PSA Control Center administrator decommissions the deployment in the
+   dashboard. That retires its identity (the machine certificate, enrollment token and package are
+   revoked, open commands are cancelled). The appliance notices at its next heartbeat, stops PSA
+   connection tests and ticket synchronization, and shows *Decommissioned* with these instructions in
+   its local admin. **Nothing on this host is changed or deleted remotely.**
+2. **This host second** — you run the uninstall script below. Until you do, tickets, data and the local
+   admin stay available on this host.
+
+The uninstall script refuses to wipe while the agent still reports an active identity, so step 1 cannot
+be skipped by accident.
+
+## Stop the appliance and keep the data
+
+```bash
+scripts/uninstall.sh
+```
+
+Windows: `powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1`
+
+Containers and networks are removed. The volumes (database, logs, backups, agent state), `./secrets`
+and `.env` are kept, so running `scripts/install.sh` again brings the same installation back.
+
+## Remove the appliance and all of its data
+
+**This permanently deletes {{clientName}}'s operational database on this host, including tickets
+stored locally and the encrypted PSA credentials.** Make and check a backup first if the data may still
+be needed (`backups` volume; see INSTALL.md).
+
+```bash
+scripts/uninstall.sh --wipe --confirm {{deploymentCode}}
+```
+
+Windows: `powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1 -Wipe -Confirm {{deploymentCode}}`
+
+The script removes the Compose project with its volumes, deletes `./secrets` and `.env`, and checks that
+no volume of `{{projectName}}` remains. Then delete this folder. The PSA Edge image itself can be removed
+with `docker image rm` once no other deployment on this host uses it.
+
+## What the Control Plane keeps
+
+Only metadata: the deployment record, its identity history (revoked certificate serials) and the audit
+trail. Reports, heartbeats, the table inventory and the command history are purged automatically after the
+organization's retention period, and the record itself can be removed by an administrator afterwards. No
+ticket, credential or database row ever left this host.

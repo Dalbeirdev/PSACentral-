@@ -1,0 +1,18 @@
+
+ RUN  v5.0.4 E:/PSA COntrole center/packages/contracts
+
+ ✓ src/contracts.test.ts > permission catalog > every system role only references known permissions 5ms
+ ✓ src/contracts.test.ts > permission catalog > super_admin holds every permission; read_only holds no write/manage permission 1ms
+ ✓ src/contracts.test.ts > permission catalog > read_only and auditor cannot change deployments 0ms
+ ✓ src/contracts.test.ts > permission catalog > technician is limited to assigned clients; administrators see all clients 0ms
+ ✓ src/contracts.test.ts > permission catalog > role permission lists contain no duplicates 0ms
+ ✓ src/contracts.test.ts > validation schemas > normalizes login email and rejects unknown keys 2ms
+ ✓ src/contracts.test.ts > validation schemas > password policy flags short, repeated and email-derived passwords 1ms
+ ✓ src/contracts.test.ts > validation schemas > list query enforces bounds and sort syntax 1ms
+ ✓ src/contracts.test.ts > validation schemas > user create requires roles and rejects duplicates 1ms
+
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+   Start at  14:17:52
+   Duration  239ms (import 69%, transform 17%, tests 11%, worker 4%)
+

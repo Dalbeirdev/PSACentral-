@@ -1,0 +1,14 @@
+
+ RUN  v5.0.4 E:/PSA COntrole center/apps/api
+
+(node:15672) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 listening listeners added to [Server]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15672) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 error listeners added to [Server]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:15672) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 close listeners added to [Server]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+ ✓ |load| test/load/fleet-load.test.ts > fleet of 1000 simulated agents > enrolls, reports and stays evaluated within the health sweep budget 75530ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  23:30:13
+   Duration  83.05s (tests 98%, import 1%)
+

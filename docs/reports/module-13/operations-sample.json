@@ -1,0 +1,111 @@
+{
+  "runningVersion": "0.1.0-next",
+  "upToDate": true,
+  "upgradeTarget": {
+    "repository": "psacc/psa-edge",
+    "version": "0.1.0-next",
+    "digest": null
+  },
+  "signingKeyId": "a4d9773a1cb56cc8",
+  "commands": [
+    {
+      "type": "refresh_health",
+      "status": "pending",
+      "params": {},
+      "issuedAt": "2026-10-15T16:13:01.283Z",
+      "deliveredAt": null,
+      "finishedAt": null,
+      "result": null
+    },
+    {
+      "type": "upgrade",
+      "status": "succeeded",
+      "params": {
+        "digest": null,
+        "version": "0.1.0-next",
+        "repository": "psacc/psa-edge"
+      },
+      "issuedAt": "2026-10-15T16:12:32.978Z",
+      "deliveredAt": "2026-10-15T16:12:46.569Z",
+      "finishedAt": "2026-10-15T16:12:56.636Z",
+      "result": {
+        "code": "upgraded",
+        "message": "The appliance now runs version 0.1.0-next (was 0.1.0).",
+        "startedAt": "2026-10-15T16:12:46.571Z",
+        "agentVersion": "0.1.0-next"
+      }
+    },
+    {
+      "type": "rotate_certificate",
+      "status": "succeeded",
+      "params": {},
+      "issuedAt": "2026-10-15T16:12:16.747Z",
+      "deliveredAt": "2026-10-15T16:12:31.482Z",
+      "finishedAt": "2026-10-15T16:12:31.501Z",
+      "result": {
+        "code": "certificate_renewed",
+        "message": "New machine certificate issued; serial 2b81f3adbd63764ab7358da0f9380a51.",
+        "startedAt": "2026-10-15T16:12:31.484Z",
+        "agentVersion": "0.1.0"
+      }
+    },
+    {
+      "type": "run_sync",
+      "status": "succeeded",
+      "params": {},
+      "issuedAt": "2026-10-15T16:12:00.544Z",
+      "deliveredAt": "2026-10-15T16:12:14.414Z",
+      "finishedAt": "2026-10-15T16:12:16.419Z",
+      "result": {
+        "code": "succeeded",
+        "message": "Synchronization succeeded: 0 received, 0 sent, 0 failed, 0 conflict(s).",
+        "startedAt": "2026-10-15T16:12:14.418Z",
+        "agentVersion": "0.1.0"
+      }
+    },
+    {
+      "type": "test_psa_connection",
+      "status": "succeeded",
+      "params": {},
+      "issuedAt": "2026-10-15T16:11:44.320Z",
+      "deliveredAt": "2026-10-15T16:11:58.345Z",
+      "finishedAt": "2026-10-15T16:11:59.347Z",
+      "result": {
+        "code": "ok",
+        "message": "Connection test ok (HTTP 200), 3 ms.",
+        "startedAt": "2026-10-15T16:11:58.347Z",
+        "agentVersion": "0.1.0"
+      }
+    },
+    {
+      "type": "refresh_health",
+      "status": "succeeded",
+      "params": {},
+      "issuedAt": "2026-10-15T16:11:30.128Z",
+      "deliveredAt": "2026-10-15T16:11:43.242Z",
+      "finishedAt": "2026-10-15T16:11:43.280Z",
+      "result": {
+        "code": "reports_delivered",
+        "message": "1 report batch(es) delivered.",
+        "startedAt": "2026-10-15T16:11:43.245Z",
+        "agentVersion": "0.1.0"
+      }
+    },
+    {
+      "type": "restart_service",
+      "status": "succeeded",
+      "params": {
+        "service": "edge-worker"
+      },
+      "issuedAt": "2026-10-15T16:11:17.169Z",
+      "deliveredAt": "2026-10-15T16:11:27.172Z",
+      "finishedAt": "2026-10-15T16:11:28.175Z",
+      "result": {
+        "code": "restarting",
+        "message": "The worker exits after this answer; Docker Compose starts it again.",
+        "startedAt": "2026-10-15T16:11:27.174Z",
+        "agentVersion": "0.1.0"
+      }
+    }
+  ]
+}

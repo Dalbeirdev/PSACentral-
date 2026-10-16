@@ -1,0 +1,18 @@
+$ psql -c '\dt'   (inside psacc-dep-00028-edge-postgres-1)
+List of relations
+ Schema |          Name          | Type  |     Owner      
+--------+------------------------+-------+----------------
+ public | app_metadata           | table | psa_edge_owner
+ public | audit_events           | table | psa_edge_owner
+ public | backup_runs            | table | psa_edge_owner
+ public | credential_store       | table | psa_edge_owner
+ public | helpdesk_tickets       | table | psa_edge_owner
+ public | integration_logs       | table | psa_edge_owner
+ public | local_admin_sessions   | table | psa_edge_owner
+ public | local_admin_users      | table | psa_edge_owner
+ public | psa_connections        | table | psa_edge_owner
+ public | schema_migrations      | table | psa_edge_owner
+ public | service_configurations | table | psa_edge_owner
+ public | sync_runs              | table | psa_edge_owner
+ public | ticket_events          | table | psa_edge_owner
+(13 rows)

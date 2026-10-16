@@ -1,0 +1,67 @@
+$ scripts/uninstall.sh --wipe --confirm DEP-00000
+==> Appliance DEP-00029 on this host
+SERVICE         STATE     STATUS
+edge-agent      running   Up 24 seconds
+edge-api        running   Up 24 seconds (healthy)
+edge-backup     running   Up 24 seconds
+edge-postgres   running   Up 31 seconds (healthy)
+edge-worker     running   Up 24 seconds
+ERROR: --wipe needs --confirm DEP-00029 (the deployment ID, exactly as shown in the dashboard).
+(exit 1)
+
+$ scripts/uninstall.sh --wipe --confirm DEP-00029
+==> Appliance DEP-00029 on this host
+SERVICE         STATE     STATUS
+edge-agent      running   Up 24 seconds
+edge-api        running   Up 24 seconds (healthy)
+edge-backup     running   Up 24 seconds
+edge-postgres   running   Up 32 seconds (healthy)
+edge-worker     running   Up 24 seconds
+
+==> Wiping DEP-00029: containers, networks, data volumes (database, logs, backups, agent state), ./secrets and .env
+This permanently deletes the client's operational database on this host, including locally stored tickets and the encrypted PSA credentials.
+
+Removed: no container, network, volume or secret of psacc-dep-00029 remains on this host.
+Delete this folder when the package is no longer needed. The PSA Edge image can be removed with 'docker image rm' once no other deployment on this host uses it.
+Container psacc-dep-00029-edge-backup-1  Stopping
+ Container psacc-dep-00029-edge-worker-1  Stopping
+ Container psacc-dep-00029-edge-agent-1  Stopping
+ Container psacc-dep-00029-edge-api-1  Stopping
+ Container psacc-dep-00029-edge-worker-1  Stopped
+ Container psacc-dep-00029-edge-worker-1  Removing
+ Container psacc-dep-00029-edge-worker-1  Removed
+ Container psacc-dep-00029-edge-api-1  Stopped
+ Container psacc-dep-00029-edge-api-1  Removing
+ Container psacc-dep-00029-edge-api-1  Removed
+ Container psacc-dep-00029-edge-agent-1  Stopped
+ Container psacc-dep-00029-edge-agent-1  Removing
+ Container psacc-dep-00029-edge-agent-1  Removed
+ Container psacc-dep-00029-edge-backup-1  Stopped
+ Container psacc-dep-00029-edge-backup-1  Removing
+ Container psacc-dep-00029-edge-backup-1  Removed
+ Container psacc-dep-00029-edge-migrate-1  Stopping
+ Container psacc-dep-00029-edge-migrate-1  Stopped
+ Container psacc-dep-00029-edge-migrate-1  Removing
+ Container psacc-dep-00029-edge-migrate-1  Removed
+ Container psacc-dep-00029-edge-postgres-1  Stopping
+ Container psacc-dep-00029-edge-postgres-1  Stopped
+ Container psacc-dep-00029-edge-postgres-1  Removing
+ Container psacc-dep-00029-edge-postgres-1  Removed
+ Volume psacc-dep-00029_edge-backups  Removing
+ Volume psacc-dep-00029_edge-logs  Removing
+ Volume psacc-dep-00029_pgdata  Removing
+ Volume psacc-dep-00029_agent-state  Removing
+ Network psacc-dep-00029_edge-internal  Removing
+ Network psacc-dep-00029_edge-egress  Removing
+ Volume psacc-dep-00029_edge-logs  Removed
+ Volume psacc-dep-00029_edge-backups  Removed
+ Volume psacc-dep-00029_agent-state  Removed
+ Volume psacc-dep-00029_pgdata  Removed
+ Network psacc-dep-00029_edge-egress  Removed
+ Network psacc-dep-00029_edge-internal  Removed
+(exit 0)
+
+$ docker ps -a | grep psacc-dep-00029- ; docker volume ls | grep psacc-dep-00029_ ; secrets
+0
+0
+secrets-gone

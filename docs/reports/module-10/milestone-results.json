@@ -1,0 +1,78 @@
+{
+  "version": "0.1.0",
+  "finishedAt": "2026-10-15T00:39:30.351Z",
+  "keep": false,
+  "results": [
+    {
+      "check": "control plane: containers up, migrated, bootstrapped, administrator signed in through the web proxy",
+      "outcome": "pass",
+      "at": "2026-10-15T00:36:12.770Z",
+      "seconds": 26
+    },
+    {
+      "check": "two appliances installed from generated packages, enrolled, verified and inventoried",
+      "outcome": "pass",
+      "at": "2026-10-15T00:36:45.101Z",
+      "seconds": 58,
+      "deployments": [
+        "DEP-00001",
+        "DEP-00002"
+      ]
+    },
+    {
+      "check": "isolation: two clients, two PSA providers, own PostgreSQL container, volume, identity and credentials each",
+      "outcome": "pass",
+      "at": "2026-10-15T00:36:47.674Z",
+      "providers": [
+        "autotask",
+        "connectwise"
+      ]
+    },
+    {
+      "check": "data boundary: ticket text absent from a full Control Plane dump; ticket count 1 reported",
+      "outcome": "pass",
+      "at": "2026-10-15T00:37:01.007Z",
+      "dumpBytes": 152710
+    },
+    {
+      "check": "invalid token / identity: used token replayed, token for another deployment, fabricated token, no certificate — all refused",
+      "outcome": "pass",
+      "at": "2026-10-15T00:37:01.043Z",
+      "statuses": [
+        "token-used",
+        "token-used",
+        "invalid-token"
+      ]
+    },
+    {
+      "check": "database stop → critical (database_unavailable) → start → healthy",
+      "outcome": "pass",
+      "at": "2026-10-15T00:37:29.191Z",
+      "timeline": [
+        "healthy",
+        "critical",
+        "healthy"
+      ]
+    },
+    {
+      "check": "restart persistence: same certificate serial, ticket row survived, healthy again",
+      "outcome": "pass",
+      "at": "2026-10-15T00:37:57.168Z",
+      "serial": "321b790f9545…"
+    },
+    {
+      "check": "control plane outage: local admin served, reports buffered, history backfilled after recovery",
+      "outcome": "pass",
+      "at": "2026-10-15T00:39:07.423Z",
+      "outageSeconds": 52,
+      "backfilledSamples": 3,
+      "buffered": 3
+    },
+    {
+      "check": "backup/restore: checksum verified, database recreated, client C gone, both appliances healthy",
+      "outcome": "pass",
+      "at": "2026-10-15T00:39:30.350Z",
+      "file": "infra/control-plane/backups/psacc-20261015T003907Z.dump"
+    }
+  ]
+}

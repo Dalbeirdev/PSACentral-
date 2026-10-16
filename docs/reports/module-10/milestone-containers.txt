@@ -1,0 +1,26 @@
+$ docker ps (Control Plane stack + two client appliances)
+psacc-cp-api	Up 49 seconds (healthy)	psacc/control-plane-api:0.1.0
+psacc-cp-postgres	Up 4 minutes (healthy)	postgres:17-alpine
+psacc-cp-web	Up 43 seconds (healthy)	psacc/control-plane-web:0.1.0
+psacc-dep-00001-edge-agent-1	Up 2 minutes	psacc/psa-edge:0.1.0
+psacc-dep-00001-edge-api-1	Up 2 minutes (healthy)	psacc/psa-edge:0.1.0
+psacc-dep-00001-edge-backup-1	Up 2 minutes	postgres:17-alpine
+psacc-dep-00001-edge-postgres-1	Up 2 minutes (healthy)	postgres:17-alpine
+psacc-dep-00001-edge-worker-1	Up 2 minutes	psacc/psa-edge:0.1.0
+psacc-dep-00002-edge-agent-1	Up 3 minutes	psacc/psa-edge:0.1.0
+psacc-dep-00002-edge-api-1	Up 3 minutes (healthy)	psacc/psa-edge:0.1.0
+psacc-dep-00002-edge-backup-1	Up 3 minutes	postgres:17-alpine
+psacc-dep-00002-edge-postgres-1	Up 2 minutes (healthy)	postgres:17-alpine
+psacc-dep-00002-edge-worker-1	Up 3 minutes	psacc/psa-edge:0.1.0
+
+$ docker volume ls
+psacc-cp-pgdata
+psacc-dep-00001_agent-state
+psacc-dep-00001_edge-backups
+psacc-dep-00001_edge-logs
+psacc-dep-00001_pgdata
+psacc-dep-00002_agent-state
+psacc-dep-00002_edge-backups
+psacc-dep-00002_edge-logs
+psacc-dep-00002_pgdata
+

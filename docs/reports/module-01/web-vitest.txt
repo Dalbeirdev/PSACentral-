@@ -1,0 +1,24 @@
+
+ RUN  v5.0.4 E:/PSA COntrole center/apps/web
+
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > /audit?outcome=failure → /audit?outcome=failure 1ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > /settings/users → /settings/users 0ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > //evil.example → null 0ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > /\evil.example → null 0ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > https://evil.example → null 0ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > javascript:alert(1) → null 0ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > /login?next=/x → null 0ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) >  → null 0ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > undefined → null 0ms
+ ✓ src/lib/lib.test.ts > formatting > formats timestamps in the requested time zone 15ms
+ ✓ src/lib/lib.test.ts > formatting > produces relative times, greetings, initials and percentages 1ms
+ ✓ src/lib/lib.test.ts > query helpers > merges params and drops empty values 0ms
+ ✓ src/lib/lib.test.ts > query helpers > keeps only known string params of bounded length 1ms
+ ✓ src/lib/lib.test.ts > navigation & health constants > has the 12 required sidebar entries, each planned one described 0ms
+ ✓ src/lib/lib.test.ts > navigation & health constants > defines a color and label for every health state 0ms
+
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  14:17:54
+   Duration  262ms (tests 39%, import 30%, transform 23%, worker 8%, environment 1%)
+

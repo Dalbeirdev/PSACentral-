@@ -1,0 +1,54 @@
+	psacc.local/edge/cmd/psa-edge		coverage: 0.0% of statements
+=== RUN   TestStatusIsHonestlyNotEnrolled
+--- PASS: TestStatusIsHonestlyNotEnrolled (0.00s)
+=== RUN   TestReportsAreBufferedBoundedAndContainNoSecrets
+--- PASS: TestReportsAreBufferedBoundedAndContainNoSecrets (0.01s)
+PASS
+coverage: 65.3% of statements
+ok  	psacc.local/edge/internal/agent	0.024s	coverage: 65.3% of statements
+=== RUN   TestPasswordHashing
+--- PASS: TestPasswordHashing (0.71s)
+=== RUN   TestPasswordPolicy
+--- PASS: TestPasswordPolicy (0.00s)
+=== RUN   TestGuardRejectsNonLoopbackHostsAndCrossOriginPosts
+--- PASS: TestGuardRejectsNonLoopbackHostsAndCrossOriginPosts (0.00s)
+=== RUN   TestTemplatesRender
+--- PASS: TestTemplatesRender (0.00s)
+PASS
+coverage: 20.1% of statements
+ok  	psacc.local/edge/internal/api	0.716s	coverage: 20.1% of statements
+=== RUN   TestLoadEdgeAcceptsThePackageFormat
+--- PASS: TestLoadEdgeAcceptsThePackageFormat (0.01s)
+=== RUN   TestLoadEdgeRejectsUnsafeOrBrokenConfiguration
+--- PASS: TestLoadEdgeRejectsUnsafeOrBrokenConfiguration (0.00s)
+=== RUN   TestSecretsAndDataKey
+--- PASS: TestSecretsAndDataKey (0.00s)
+=== RUN   TestLoadEnrollment
+--- PASS: TestLoadEnrollment (0.00s)
+PASS
+coverage: 83.9% of statements
+ok  	psacc.local/edge/internal/config	0.032s	coverage: 83.9% of statements
+	psacc.local/edge/internal/db		coverage: 0.0% of statements
+	psacc.local/edge/internal/inventory		coverage: 0.0% of statements
+=== RUN   TestMigrationsAreOrderedChecksummedAndCreateEveryRequiredTable
+--- PASS: TestMigrationsAreOrderedChecksummedAndCreateEveryRequiredTable (0.00s)
+=== RUN   TestInspectorRoleIsNeverGrantedTables
+--- PASS: TestInspectorRoleIsNeverGrantedTables (0.00s)
+=== RUN   TestAuditAndLogsAreAppendOnlyForTheApplication
+--- PASS: TestAuditAndLogsAreAppendOnlyForTheApplication (0.00s)
+PASS
+coverage: 6.5% of statements
+ok  	psacc.local/edge/internal/migrate	0.017s	coverage: 6.5% of statements
+=== RUN   TestTextRedactsSecretsAndPersonalData
+--- PASS: TestTextRedactsSecretsAndPersonalData (0.00s)
+=== RUN   TestTextLimitsLength
+--- PASS: TestTextLimitsLength (0.00s)
+PASS
+coverage: 100.0% of statements
+ok  	psacc.local/edge/internal/redact	0.008s	coverage: 100.0% of statements
+=== RUN   TestSealOpenAndBinding
+--- PASS: TestSealOpenAndBinding (0.00s)
+PASS
+coverage: 76.5% of statements
+ok  	psacc.local/edge/internal/secretbox	0.008s	coverage: 76.5% of statements
+	psacc.local/edge/internal/worker		coverage: 0.0% of statements

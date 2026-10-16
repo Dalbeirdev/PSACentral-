@@ -1,0 +1,18 @@
+{{template "head" .}}
+<div class="narrow">
+  <h1>First-run setup</h1>
+  <p class="lead">Create the local administrator for this appliance. This account works on this host only and is independent of the PSA Control Center.</p>
+  <div class="card">
+    <form method="post" action="/setup" novalidate>
+      <label for="username">User name</label>
+      <input id="username" name="username" type="text" autocomplete="username" required value="{{index .Fields "username"}}">
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="new-password" required aria-describedby="pw-hint">
+      <p class="hint" id="pw-hint">At least 12 characters, and not containing the user name.</p>
+      <label for="confirm">Confirm password</label>
+      <input id="confirm" name="confirm" type="password" autocomplete="new-password" required>
+      <button class="btn" type="submit">Create administrator</button>
+    </form>
+  </div>
+</div>
+{{template "foot" .}}

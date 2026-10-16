@@ -1,0 +1,18 @@
+$ scripts/verify.sh   (exit 1)
+Verifying DEP-00028 (installation f19d9db8-72e2-4c2e-93bd-95aa2078669a)
+PASS  Docker Engine reachable
+PASS  Compose configuration valid
+PASS  Secrets present on this host
+PASS  Database container running
+PASS  PostgreSQL accepting connections
+PASS  Database migrations completed
+PASS  Application tables present (at least 12)
+PASS  Edge API running
+PASS  Edge worker running
+PASS  Edge agent running
+PASS  Backup service running
+PASS  Edge API healthy
+FAIL  Agent enrolled with the Control Plane
+
+12 passed, 1 failed
+Details: docker compose logs <service>   (services: edge-postgres edge-migrate edge-api edge-worker edge-agent)

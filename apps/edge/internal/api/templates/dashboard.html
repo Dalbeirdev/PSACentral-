@@ -1,0 +1,88 @@
+{{template "head" .}}
+{{with .Data}}
+<h1>Appliance status</h1>
+{{if index .Lifecycle "decommissioned"}}<div class="alert error" role="alert" data-testid="decommissioned-banner"><strong>Decommissioned by the provider</strong> since <span class="mono">{{index .Lifecycle "decommissionedSince"}}</span>. The management identity is retired and this appliance no longer reports to the Control Plane; PSA connection tests and ticket synchronization have stopped. Tickets, data and this administration page stay on this host until the operator removes the appliance — see <a href="/removal">Removal</a>.</div>{{end}}
+{{if index .Lifecycle "suspended"}}<div class="alert error" role="alert" data-testid="suspended-banner"><strong>Suspended by the provider</strong> since <span class="mono">{{index .Lifecycle "since"}}</span>{{with index .Lifecycle "reason"}} — {{.}}{{end}}. PSA connection tests and ticket synchronization are paused until the deployment is resumed from the Control Plane. Tickets, data and this administration page stay available; nothing was deleted.</div>{{end}}
+<p class="lead">{{index .Deployment "client"}} · deployment <span class="mono">{{index .Deployment "code"}}</span> · installation <span class="mono">{{index .Deployment "installationId"}}</span></p>
+<div class="grid">
+  <section class="card" aria-labelledby="db-h">
+    <h2 id="db-h">Database</h2>
+    <dl>
+      <div><dt>Status</dt><dd>{{if .Database.Available}}<span class="pill ok">Available</span>{{else}}<span class="pill warn">Unavailable</span>{{end}}</dd></div>
+      <div><dt>PostgreSQL</dt><dd>{{.Database.ServerVersion}}</dd></div>
+      <div><dt>Schema version</dt><dd class="mono">{{.Database.SchemaVersion}}</dd></div>
+      <div><dt>Migrations applied</dt><dd>{{.Database.MigrationsApplied}}</dd></div>
+      <div><dt>Size</dt><dd>{{bytes .Database.SizeBytes}}</dd></div>
+    </dl>
+  </section>
+  <section class="card" aria-labelledby="psa-h">
+    <h2 id="psa-h">PSA integration</h2>
+    <dl>
+      <div><dt>Instance</dt><dd class="mono">{{index .PSA "instance"}}</dd></div>
+      <div><dt>Provider</dt><dd>{{index .PSA "provider"}}</dd></div>
+      <div><dt>Credentials</dt><dd>{{index .PSA "credentialsPresent"}} of {{index .PSA "credentialFields"}} set</dd></div>
+      <div><dt>Status</dt><dd>{{index .PSA "status"}}</dd></div>
+      <div><dt>Connection test</dt><dd>{{if index .PSA "connectionTested"}}{{with index .PSA "lastTest"}}{{if .OK}}<span class="pill ok">verified</span>{{else}}<span class="pill err">{{.Code}}</span>{{end}} <span class="mono">{{ts .TestedAt}}</span>{{end}}{{else}}<span class="pill off">Not run yet</span>{{end}} · <a href="/credentials#connection">details</a></dd></div>
+    </dl>
+  </section>
+  <section class="card" aria-labelledby="cp-h">
+    <h2 id="cp-h">Control Plane</h2>
+    <dl>
+      <div><dt>Enrollment</dt><dd>{{if index .Enrollment "enrolled"}}<span class="pill ok">Enrolled</span>{{else}}<span class="pill off">{{index .Enrollment "state"}}</span>{{end}}</dd></div>
+      <div><dt>Last heartbeat</dt><dd>{{with index .Enrollment "lastHeartbeatAt"}}{{.}}{{else}}—{{end}}</dd></div>
+      <div><dt>Certificate valid until</dt><dd>{{with index .Enrollment "certificateNotAfter"}}{{.}}{{else}}—{{end}}</dd></div>
+      <div><dt>Detail</dt><dd>{{index .Enrollment "detail"}}</dd></div>
+      <div><dt>Last backup</dt><dd>{{index .Backup "lastStatus"}}</dd></div>
+      <div><dt>License</dt><dd>{{with .License}}<span class="mono">{{index . "code"}}</span> · {{index . "displayName"}}{{with index . "endsAt"}} · until {{.}}{{end}}{{else}}<span class="hint">not in this package</span>{{end}}</dd></div>
+      <div><dt>Lifecycle</dt><dd>{{if index .Lifecycle "decommissioned"}}<span class="pill err">decommissioned</span>{{else if index .Lifecycle "suspended"}}<span class="pill err">suspended</span>{{else}}<span class="pill ok">active</span>{{end}}</dd></div>
+    </dl>
+  </section>
+</div>
+<section class="card" aria-labelledby="tk-h">
+  <h2 id="tk-h">Tickets &amp; synchronization</h2>
+  <dl>
+    <div><dt>Tickets on this appliance</dt><dd>{{index .Tickets "total"}} total · {{index .Tickets "open"}} open · <a href="/tickets">open the list</a></dd></div>
+    <div><dt>Last synchronization</dt><dd>{{with index .Sync "lastStatus"}}<span class="pill {{if eq . "succeeded"}}ok{{else if eq . "failed"}}err{{else}}warn{{end}}">{{.}}</span> <span class="mono">{{ts (index $.Data.Sync "lastRunAt")}}</span> · received {{index $.Data.Sync "itemsReceived"}} · sent {{index $.Data.Sync "itemsSent"}} · failed {{index $.Data.Sync "itemsFailed"}}{{else}}<span class="pill off">none yet</span>{{end}} · <a href="/sync">details</a></dd></div>
+    <div><dt>Local changes waiting</dt><dd>{{with index .Sync "pendingOutbound"}}{{.}}{{else}}0{{end}}</dd></div>
+  </dl>
+</section>
+<section class="card" aria-labelledby="rc-h">
+  <h2 id="rc-h">Remote commands</h2>
+  <p class="hint">Signed, time-limited commands from the Control Plane, pulled by the agent and verified here before anything runs. Only these are possible: refresh health, test the PSA connection, run synchronization, restart a service, rotate the machine certificate, stage an image upgrade. Nothing destructive.</p>
+  {{with index .Remote "stagedUpgrade"}}
+  <div class="notice" data-testid="staged-upgrade">
+    <strong>Upgrade staged:</strong> <span class="mono">{{.Image}}</span> (running {{$.Data.Version}}). The appliance has no Docker socket by design, so apply it on this host from the package directory:
+    <pre class="mono">scripts/upgrade.sh</pre>
+    The agent reports the result to the Control Plane once the new version runs. Order expires {{.ExpiresAt}}.
+  </div>
+  {{end}}
+  {{with index .Remote "commands"}}
+  <table>
+    <thead><tr><th>Received</th><th>Command</th><th>Outcome</th><th>Detail</th><th>Reported</th></tr></thead>
+    <tbody>
+    {{range .}}<tr><td class="mono">{{ts .ReceivedAt}}</td><td>{{.Type}}</td><td>{{if eq .Status "succeeded"}}<span class="pill ok">succeeded</span>{{else if eq .Status "staged"}}<span class="pill warn">staged</span>{{else}}<span class="pill err">{{.Status}}</span>{{end}} <span class="mono">{{.Code}}</span></td><td>{{.Message}}</td><td>{{if .Reported}}yes{{else}}pending{{end}}</td></tr>{{end}}
+    </tbody>
+  </table>
+  {{else}}<p class="hint">No remote command has been received yet.</p>{{end}}
+</section>
+
+<section class="card" aria-labelledby="svc-h">
+  <h2 id="svc-h">Services on this appliance</h2>
+  <ul>{{range .Services}}<li>{{index . "name"}}{{if index . "usesPsa"}} · via PSA{{end}}{{if not (index . "enabled")}} (disabled){{end}}</li>{{end}}</ul>
+</section>
+<section class="card" aria-labelledby="tbl-h">
+  <h2 id="tbl-h">Tables ({{len .Database.Tables}})</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Table</th><th>Estimated rows</th><th>Size</th><th>Columns</th><th>Primary key</th><th>Indexes</th><th>Foreign keys</th></tr></thead>
+    <tbody>{{range .Database.Tables}}<tr><td class="mono">{{.Schema}}.{{.Name}}</td><td>{{if .EstimatedRows}}{{deref .EstimatedRows}}{{else}}<span class="hint">not analysed yet</span>{{end}}</td><td>{{bytes .SizeBytes}}</td><td>{{.Columns}}</td><td>{{if .HasPrimaryKey}}yes{{else}}no{{end}}</td><td>{{.Indexes}}</td><td>{{.ForeignKeys}}</td></tr>{{end}}</tbody>
+  </table></div>
+  <p class="hint">Row counts are PostgreSQL estimates from the catalog (available after PostgreSQL first analyses a table); the agent never reads rows.</p>
+</section>
+<section class="card" aria-labelledby="log-h">
+  <h2 id="log-h">Recent integration log</h2>
+  {{if .RecentLogs}}<div class="scroll"><table><thead><tr><th>Time</th><th>Level</th><th>Component</th><th>Message</th></tr></thead><tbody>
+  {{range .RecentLogs}}<tr><td class="mono">{{ts (index . "at")}}</td><td>{{index . "level"}}</td><td>{{index . "component"}}</td><td>{{index . "message"}}</td></tr>{{end}}
+  </tbody></table></div>{{else}}<p class="hint">No entries yet.</p>{{end}}
+</section>
+{{end}}
+{{template "foot" .}}

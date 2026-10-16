@@ -1,0 +1,39 @@
+{
+  "name": "@psacc/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PSA Control Center — Control Plane web UI (Next.js)",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3210 --hostname 127.0.0.1",
+    "build": "next build",
+    "start": "next start --port 3210 --hostname 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@psacc/contracts": "workspace:*",
+    "clsx": "2.1.1",
+    "lucide-react": "1.48.0",
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "recharts": "3.10.1",
+    "tailwind-merge": "3.7.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@peculiar/x509": "1.12.3",
+    "@playwright/test": "1.64.0",
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "26.6.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "fflate": "0.8.2",
+    "tailwindcss": "4.3.3",
+    "typescript": "6.0.3",
+    "vitest": "5.0.4"
+  }
+}

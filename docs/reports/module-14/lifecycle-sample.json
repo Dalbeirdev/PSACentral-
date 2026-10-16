@@ -1,0 +1,30 @@
+{
+  "deployment": "verified",
+  "license": "LIC-00030",
+  "commands": [
+    {
+      "type": "resume",
+      "status": "succeeded",
+      "params": {},
+      "result": {
+        "code": "resumed",
+        "message": "PSA work resumed on the appliance.",
+        "startedAt": "2026-10-16T01:15:34.908Z",
+        "agentVersion": "0.1.0"
+      }
+    },
+    {
+      "type": "suspend",
+      "status": "succeeded",
+      "params": {
+        "reason": "Customer paused the contract until the new site opens"
+      },
+      "result": {
+        "code": "suspended",
+        "message": "PSA work paused on the appliance; data and the local UI stay available.",
+        "startedAt": "2026-10-16T01:15:17.706Z",
+        "agentVersion": "0.1.0"
+      }
+    }
+  ]
+}

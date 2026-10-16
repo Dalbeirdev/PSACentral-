@@ -1,0 +1,33 @@
+
+ RUN  v5.0.4 E:/PSA COntrole center/apps/web
+
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > /audit?outcome=failure → /audit?outcome=failure 1ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > /settings/users → /settings/users 0ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > //evil.example → null 0ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > /\evil.example → null 0ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > https://evil.example → null 0ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > javascript:alert(1) → null 0ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > /login?next=/x → null 0ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) >  → null 0ms
+ ✓ src/lib/lib.test.ts > safeNextPath (open-redirect guard) > undefined → null 0ms
+ ✓ src/lib/lib.test.ts > formatting > formats timestamps in the requested time zone 15ms
+ ✓ src/lib/lib.test.ts > formatting > produces relative times, greetings, initials and percentages 1ms
+ ✓ src/lib/lib.test.ts > query helpers > merges params and drops empty values 0ms
+ ✓ src/lib/lib.test.ts > query helpers > keeps only known string params of bounded length 1ms
+ ✓ src/lib/lib.test.ts > navigation & health constants > has the 12 required sidebar entries, each planned one described 0ms
+ ✓ src/lib/lib.test.ts > navigation & health constants > defines a color and label for every health state 0ms
+ ✓ src/lib/wizard.test.ts > wizard step availability > has the 10 steps in order 2ms
+ ✓ src/lib/wizard.test.ts > wizard step availability > a new draft only opens step 1 0ms
+ ✓ src/lib/wizard.test.ts > wizard step availability > steps unlock in order and review/create need every section 0ms
+ ✓ src/lib/wizard.test.ts > wizard step availability > after creation, steps 1–7 close and 8–10 open; abandoned drafts lock everything 0ms
+ ✓ src/lib/wizard.test.ts > calendar dates > render without time-zone shifting and count days 14ms
+ ✓ src/lib/psa-config.test.ts > initialConfig > fills every descriptor field, applying defaults, so a new form starts complete 2ms
+ ✓ src/lib/psa-config.test.ts > initialConfig > turns stored numbers into form strings and ignores keys the descriptor does not know 1ms
+ ✓ src/lib/psa-config.test.ts > initialConfig > round-trips: stored config -> form values -> provider schema gives the same config back 9ms
+ ✓ src/lib/lib.test.ts > formatBytes > formats package sizes 167ms
+
+ Test Files  3 passed (3)
+      Tests  24 passed (24)
+   Start at  19:59:44
+   Duration  380ms (transform 38%, import 31%, tests 30%, worker 2%)
+

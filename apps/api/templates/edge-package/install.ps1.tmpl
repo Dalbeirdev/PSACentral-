@@ -1,0 +1,81 @@
+<#
+  PSA Edge appliance installer — {{deploymentCode}} (package {{packageNumber}}), Windows Docker hosts.
+  Generates this installation's secrets on this host, validates the configuration and starts the
+  appliance (Linux containers through Docker Desktop / WSL 2). Safe to run again: existing secrets
+  and data volumes are kept.
+
+  Usage: powershell -ExecutionPolicy Bypass -File scripts\install.ps1 [-Production] [-Prepare]
+    -Prepare  create this host's secrets and .env and validate the configuration, without pulling or starting
+#>
+param([switch]$Production, [switch]$Prepare)
+$ErrorActionPreference = 'Stop'
+Set-Location (Split-Path -Parent $PSScriptRoot)
+
+$composeArgs = @('compose', '-f', 'compose.yaml')
+if ($Production) { $composeArgs += @('-f', 'compose.production.yaml') }
+function Step([string]$m) { Write-Host "`n==> $m" }
+function Fail([string]$m) { Write-Error $m; exit 1 }
+function Compose { & docker @composeArgs @args; if ($LASTEXITCODE -ne 0) { Fail "docker $($composeArgs + $args -join ' ') failed." } }
+
+Step 'Checking prerequisites'
+if (-not (Get-Command docker -ErrorAction SilentlyContinue)) { Fail 'Docker is not installed on this host.' }
+& docker info *> $null; if ($LASTEXITCODE -ne 0) { Fail 'Docker Engine is not running, or this user may not use it.' }
+& docker compose version *> $null; if ($LASTEXITCODE -ne 0) { Fail 'Docker Compose v2 is required (docker compose).' }
+$expires = [DateTimeOffset]::Parse('{{tokenExpiresAt}}')
+if ([DateTimeOffset]::UtcNow -ge $expires) { Fail "The enrollment token in this package expired at $expires. Generate a new package in the dashboard." }
+
+Step "Creating this installation's secrets (they never leave this host)"
+New-Item -ItemType Directory -Force -Path secrets | Out-Null
+# Only the current user (and SYSTEM/Administrators) may read the secrets directory.
+& icacls secrets /inheritance:r /grant:r "$($env:USERNAME):(OI)(CI)F" /grant:r 'SYSTEM:(OI)(CI)F' /grant:r 'Administrators:(OI)(CI)F' | Out-Null
+function New-Secret([string]$name, [int]$bytes) {
+  $file = Join-Path 'secrets' $name
+  if ((Test-Path $file) -and ((Get-Item $file).Length -gt 0)) { Write-Host "  kept     $name"; return }
+  $buf = New-Object byte[] $bytes
+  # Create().GetBytes works on Windows PowerShell 5.1 (.NET Framework) and PowerShell 7.
+  $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create(); $rng.GetBytes($buf); $rng.Dispose()
+  [System.IO.File]::WriteAllText((Join-Path (Get-Location) $file), [Convert]::ToBase64String($buf))
+  Write-Host "  created  $name"
+}
+New-Secret 'postgres_owner_password' 32
+New-Secret 'app_db_password' 32
+New-Secret 'inspector_db_password' 32
+New-Secret 'data_key' 32
+# Same protection for the single-use enrollment token.
+& icacls enrollment /inheritance:r /grant:r "$($env:USERNAME):(OI)(CI)F" /grant:r 'SYSTEM:(OI)(CI)F' /grant:r 'Administrators:(OI)(CI)F' | Out-Null
+
+if (-not (Test-Path '.env')) {
+  Copy-Item 'config/edge.env.template' '.env'
+  Write-Host '  created  .env (from config/edge.env.template)'
+}
+
+Step 'Validating the Compose configuration'
+Compose config --quiet
+
+if ($Prepare) {
+  Write-Host "
+Prepared {{deploymentCode}}: secrets and .env created, configuration valid. Run scripts\install.ps1 to start it."
+  exit 0
+}
+
+Step 'Getting images'
+if ($Production) { Compose pull } else { & docker @composeArgs pull --ignore-pull-failures }
+
+Step 'Starting the appliance'
+Compose up -d
+
+$port = (Select-String -Path '.env' -Pattern '^EDGE_LOCAL_ADMIN_PORT=(\d+)' | Select-Object -First 1).Matches.Groups[1].Value
+if (-not $port) { $port = '{{localAdminPort}}' }
+$verify = 'scripts\verify.ps1'
+if ($Production) { $verify += ' -Production' }
+Write-Host @"
+
+The PSA Edge appliance for {{deploymentCode}} has been started.
+
+  Check the installation:   powershell -ExecutionPolicy Bypass -File $verify
+  Local admin and setup:    http://127.0.0.1:$port  (this host only)
+
+The dashboard shows this deployment as enrolled only after the agent has connected and
+registered installation {{installationId}}. Once it is enrolled, delete the downloaded ZIP:
+its enrollment token cannot be used again.
+"@

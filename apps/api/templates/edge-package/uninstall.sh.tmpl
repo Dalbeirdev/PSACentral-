@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# PSA Edge appliance removal — {{deploymentCode}} (package {{packageNumber}}), {{clientComment}}.
+# Stops the appliance and, only when asked, wipes everything it stored on this host. Nothing here is
+# ever triggered remotely: the Control Plane can retire the deployment's identity (decommission), the
+# removal itself is always run by the host operator.
+#
+# Usage: scripts/uninstall.sh [--wipe --confirm {{deploymentCode}}] [--force]
+#   (no option)  stop and remove the containers and networks; keep the data volumes, ./secrets and .env
+#   --wipe       also delete the data volumes (database, logs, backups, agent state), ./secrets and .env — irreversible
+#   --confirm    the deployment ID, required with --wipe
+#   --force      wipe although the Control Plane has not decommissioned this deployment (not recommended)
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+WIPE=0
+CONFIRM=""
+FORCE=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --wipe) WIPE=1 ;;
+    --confirm) CONFIRM="${2:-}"; shift ;;
+    --force) FORCE=1 ;;
+    -h|--help) sed -n '2,11p' "$0"; exit 0 ;;
+    *) echo "Unknown option: $1" >&2; exit 2 ;;
+  esac
+  shift
+done
+PROJECT="{{projectName}}"
+COMPOSE=(docker compose -f compose.yaml)
+
+step() { printf '\n==> %s\n' "$1"; }
+fail() { printf 'ERROR: %s\n' "$1" >&2; exit 1; }
+
+command -v docker >/dev/null 2>&1 || fail "Docker is not installed on this host."
+docker info >/dev/null 2>&1 || fail "Docker Engine is not running, or this user may not use it."
+
+step "Appliance {{deploymentCode}} on this host"
+"${COMPOSE[@]}" ps --format 'table {{ .Service }}\t{{ .State }}\t{{ .Status }}' 2>/dev/null || echo "  (not running)"
+
+if [ "$WIPE" = 1 ]; then
+  [ "$CONFIRM" = "{{deploymentCode}}" ] || fail "--wipe needs --confirm {{deploymentCode}} (the deployment ID, exactly as shown in the dashboard)."
+  # The agent's own view of its identity: 'decommissioned' once the Control Plane retired it.
+  STATE=$("${COMPOSE[@]}" exec -T edge-agent edge-agent status 2>/dev/null | sed -n 's/.*"state":"\([a-z_]*\)".*/\1/p' | head -n 1 || true)
+  if [ -n "$STATE" ] && [ "$STATE" != "decommissioned" ] && [ "$STATE" != "revoked" ] && [ "$FORCE" != 1 ]; then
+    fail "The agent reports state '$STATE': the Control Plane has not decommissioned this deployment. Decommission it in the dashboard first (its identity is retired and the agent reports 'decommissioned'), or pass --force to wipe anyway."
+  fi
+  step "Wiping {{deploymentCode}}: containers, networks, data volumes (database, logs, backups, agent state), ./secrets and .env"
+  echo "This permanently deletes the client's operational database on this host, including locally stored tickets and the encrypted PSA credentials."
+  "${COMPOSE[@]}" down --volumes --remove-orphans
+  rm -rf secrets .env
+  LEFT=$(docker volume ls -q --filter "name=^${PROJECT}_" | wc -l | tr -d ' ')
+  [ "$LEFT" = 0 ] || fail "$LEFT volume(s) of ${PROJECT} still exist; remove them with: docker volume ls -q --filter name=^${PROJECT}_ | xargs docker volume rm"
+  echo
+  echo "Removed: no container, network, volume or secret of ${PROJECT} remains on this host."
+  echo "Delete this folder when the package is no longer needed. The PSA Edge image can be removed with 'docker image rm' once no other deployment on this host uses it."
+else
+  step "Stopping {{deploymentCode}} (data volumes, ./secrets and .env are kept)"
+  "${COMPOSE[@]}" down --remove-orphans
+  echo
+  echo "Stopped. scripts/install.sh brings the same installation back."
+  echo "To delete its data as well: scripts/uninstall.sh --wipe --confirm {{deploymentCode}}"
+fi

@@ -1,0 +1,5 @@
+$ docker compose logs edge-agent
+{"time":"2026-10-14T16:41:41.327256204Z","level":"INFO","msg":"enrolled with the Control Plane","component":"edge-agent","version":"0.1.0","serial":"7d85b3675f4d95126050faea84891a8c","notAfter":"2027-01-12T16:41:41Z"}
+{"time":"2026-10-14T16:41:41.905369496Z","level":"INFO","msg":"schema snapshot collected","component":"edge-agent","version":"0.1.0","tables":13,"fingerprint":"8739a34be879294dcf1b1d148398526f"}
+{"time":"2026-10-14T16:41:42.04222215Z","level":"INFO","msg":"reports delivered","component":"edge-agent","version":"0.1.0","batches":2}
+{"time":"2026-10-14T16:41:57.382548449Z","level":"INFO","msg":"reports delivered","component":"edge-agent","version":"0.1.0","batches":1}

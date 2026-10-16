@@ -1,0 +1,181 @@
+{
+  "database": {
+    "databaseName": "psa_edge",
+    "available": true,
+    "serverVersion": "17.11",
+    "schemaVersion": "0002",
+    "migrationsApplied": 2,
+    "lastMigratedAt": "2026-10-14T16:41:39.447849Z",
+    "sizeBytes": 8550067,
+    "tableCount": 13,
+    "error": null,
+    "observedAt": "2026-10-14T16:41:41.327Z",
+    "receivedAt": "2026-10-14T16:41:41.929Z"
+  },
+  "inspection": {
+    "lastInventoryAt": "2026-10-14T16:41:41.327Z",
+    "lastSchemaAt": "2026-10-14T16:41:41.870Z",
+    "fingerprint": "8739a34be879294dcf1b1d148398526f",
+    "detailedTables": 13,
+    "pendingTables": 0
+  },
+  "errors": [],
+  "tables": [
+    {
+      "name": "app_metadata",
+      "schema": "public",
+      "columns": 3,
+      "indexes": 1,
+      "sizeBytes": 32768,
+      "foreignKeys": 0,
+      "estimatedRows": null,
+      "hasPrimaryKey": true,
+      "kind": "table",
+      "detailsObservedAt": "2026-10-14T16:41:41.870Z"
+    },
+    {
+      "name": "audit_events",
+      "schema": "public",
+      "columns": 8,
+      "indexes": 2,
+      "sizeBytes": 49152,
+      "foreignKeys": 0,
+      "estimatedRows": null,
+      "hasPrimaryKey": true,
+      "kind": "table",
+      "detailsObservedAt": "2026-10-14T16:41:41.870Z"
+    },
+    {
+      "name": "backup_runs",
+      "schema": "public",
+      "columns": 8,
+      "indexes": 2,
+      "sizeBytes": 24576,
+      "foreignKeys": 0,
+      "estimatedRows": null,
+      "hasPrimaryKey": true,
+      "kind": "table",
+      "detailsObservedAt": "2026-10-14T16:41:41.870Z"
+    },
+    {
+      "name": "credential_store",
+      "schema": "public",
+      "columns": 8,
+      "indexes": 2,
+      "sizeBytes": 24576,
+      "foreignKeys": 1,
+      "estimatedRows": null,
+      "hasPrimaryKey": true,
+      "kind": "table",
+      "detailsObservedAt": "2026-10-14T16:41:41.870Z"
+    },
+    {
+      "name": "helpdesk_tickets",
+      "schema": "public",
+      "columns": 17,
+      "indexes": 4,
+      "sizeBytes": 40960,
+      "foreignKeys": 1,
+      "estimatedRows": null,
+      "hasPrimaryKey": true,
+      "kind": "table",
+      "detailsObservedAt": "2026-10-14T16:41:41.870Z"
+    },
+    {
+      "name": "integration_logs",
+      "schema": "public",
+      "columns": 9,
+      "indexes": 2,
+      "sizeBytes": 24576,
+      "foreignKeys": 1,
+      "estimatedRows": null,
+      "hasPrimaryKey": true,
+      "kind": "table",
+      "detailsObservedAt": "2026-10-14T16:41:41.870Z"
+    },
+    {
+      "name": "local_admin_sessions",
+      "schema": "public",
+      "columns": 5,
+      "indexes": 2,
+      "sizeBytes": 24576,
+      "foreignKeys": 1,
+      "estimatedRows": null,
+      "hasPrimaryKey": true,
+      "kind": "table",
+      "detailsObservedAt": "2026-10-14T16:41:41.870Z"
+    },
+    {
+      "name": "local_admin_users",
+      "schema": "public",
+      "columns": 7,
+      "indexes": 2,
+      "sizeBytes": 24576,
+      "foreignKeys": 0,
+      "estimatedRows": null,
+      "hasPrimaryKey": true,
+      "kind": "table",
+      "detailsObservedAt": "2026-10-14T16:41:41.870Z"
+    },
+    {
+      "name": "psa_connections",
+      "schema": "public",
+      "columns": 12,
+      "indexes": 2,
+      "sizeBytes": 49152,
+      "foreignKeys": 0,
+      "estimatedRows": null,
+      "hasPrimaryKey": true,
+      "kind": "table",
+      "detailsObservedAt": "2026-10-14T16:41:41.870Z"
+    },
+    {
+      "name": "schema_migrations",
+      "schema": "public",
+      "columns": 4,
+      "indexes": 1,
+      "sizeBytes": 32768,
+      "foreignKeys": 0,
+      "estimatedRows": null,
+      "hasPrimaryKey": true,
+      "kind": "table",
+      "detailsObservedAt": "2026-10-14T16:41:41.870Z"
+    },
+    {
+      "name": "service_configurations",
+      "schema": "public",
+      "columns": 9,
+      "indexes": 2,
+      "sizeBytes": 49152,
+      "foreignKeys": 1,
+      "estimatedRows": null,
+      "hasPrimaryKey": true,
+      "kind": "table",
+      "detailsObservedAt": "2026-10-14T16:41:41.870Z"
+    },
+    {
+      "name": "sync_runs",
+      "schema": "public",
+      "columns": 11,
+      "indexes": 2,
+      "sizeBytes": 24576,
+      "foreignKeys": 1,
+      "estimatedRows": null,
+      "hasPrimaryKey": true,
+      "kind": "table",
+      "detailsObservedAt": "2026-10-14T16:41:41.870Z"
+    },
+    {
+      "name": "ticket_events",
+      "schema": "public",
+      "columns": 9,
+      "indexes": 3,
+      "sizeBytes": 32768,
+      "foreignKeys": 1,
+      "estimatedRows": null,
+      "hasPrimaryKey": true,
+      "kind": "table",
+      "detailsObservedAt": "2026-10-14T16:41:41.870Z"
+    }
+  ]
+}

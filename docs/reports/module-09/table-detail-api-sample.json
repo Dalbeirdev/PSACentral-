@@ -1,0 +1,226 @@
+{
+  "deploymentId": "(omitted)",
+  "code": "DEP-00028",
+  "client": {
+    "id": "(omitted)",
+    "code": "CL-00003",
+    "displayName": "Northgate Dental Partners"
+  },
+  "schema": "public",
+  "name": "helpdesk_tickets",
+  "kind": "table",
+  "observedAt": "2026-10-14T16:41:41.870Z",
+  "receivedAt": "2026-10-14T16:41:42.005Z",
+  "fingerprint": "8739a34be879294dcf1b1d148398526f",
+  "columns": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "default": "gen_random_uuid()",
+      "identity": false,
+      "nullable": false,
+      "position": 1
+    },
+    {
+      "name": "psa_connection_id",
+      "type": "uuid",
+      "default": null,
+      "identity": false,
+      "nullable": true,
+      "position": 2
+    },
+    {
+      "name": "external_ticket_id",
+      "type": "text",
+      "default": null,
+      "identity": false,
+      "nullable": true,
+      "position": 3
+    },
+    {
+      "name": "provider",
+      "type": "text",
+      "default": null,
+      "identity": false,
+      "nullable": true,
+      "position": 4
+    },
+    {
+      "name": "title",
+      "type": "text",
+      "default": null,
+      "identity": false,
+      "nullable": false,
+      "position": 5
+    },
+    {
+      "name": "description",
+      "type": "text",
+      "default": null,
+      "identity": false,
+      "nullable": true,
+      "position": 6
+    },
+    {
+      "name": "status",
+      "type": "text",
+      "default": "'new'::text",
+      "identity": false,
+      "nullable": false,
+      "position": 7
+    },
+    {
+      "name": "psa_status",
+      "type": "text",
+      "default": null,
+      "identity": false,
+      "nullable": true,
+      "position": 8
+    },
+    {
+      "name": "priority",
+      "type": "text",
+      "default": "'normal'::text",
+      "identity": false,
+      "nullable": false,
+      "position": 9
+    },
+    {
+      "name": "psa_priority",
+      "type": "text",
+      "default": null,
+      "identity": false,
+      "nullable": true,
+      "position": 10
+    },
+    {
+      "name": "requester_email",
+      "type": "text",
+      "default": null,
+      "identity": false,
+      "nullable": true,
+      "position": 11
+    },
+    {
+      "name": "sla_first_response_due_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "identity": false,
+      "nullable": true,
+      "position": 12
+    },
+    {
+      "name": "sla_resolution_due_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "identity": false,
+      "nullable": true,
+      "position": 13
+    },
+    {
+      "name": "resolved_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "identity": false,
+      "nullable": true,
+      "position": 14
+    },
+    {
+      "name": "external_updated_at",
+      "type": "timestamp with time zone",
+      "default": null,
+      "identity": false,
+      "nullable": true,
+      "position": 15
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "identity": false,
+      "nullable": false,
+      "position": 16
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "default": "now()",
+      "identity": false,
+      "nullable": false,
+      "position": 17
+    }
+  ],
+  "primaryKey": {
+    "name": "helpdesk_tickets_pkey",
+    "columns": [
+      "id"
+    ]
+  },
+  "indexes": [
+    {
+      "name": "helpdesk_tickets_external_key",
+      "unique": true,
+      "primary": false,
+      "sizeBytes": 8192,
+      "definition": "CREATE UNIQUE INDEX helpdesk_tickets_external_key ON public.helpdesk_tickets USING btree (psa_connection_id, external_ticket_id)"
+    },
+    {
+      "name": "helpdesk_tickets_pkey",
+      "unique": true,
+      "primary": true,
+      "sizeBytes": 8192,
+      "definition": "CREATE UNIQUE INDEX helpdesk_tickets_pkey ON public.helpdesk_tickets USING btree (id)"
+    },
+    {
+      "name": "helpdesk_tickets_status_idx",
+      "unique": false,
+      "primary": false,
+      "sizeBytes": 8192,
+      "definition": "CREATE INDEX helpdesk_tickets_status_idx ON public.helpdesk_tickets USING btree (status, updated_at DESC)"
+    },
+    {
+      "name": "helpdesk_tickets_updated_idx",
+      "unique": false,
+      "primary": false,
+      "sizeBytes": 8192,
+      "definition": "CREATE INDEX helpdesk_tickets_updated_idx ON public.helpdesk_tickets USING btree (updated_at DESC)"
+    }
+  ],
+  "foreignKeys": [
+    {
+      "name": "helpdesk_tickets_psa_connection_id_fkey",
+      "columns": [
+        "psa_connection_id"
+      ],
+      "onDelete": "restrict",
+      "referencedTable": "psa_connections",
+      "referencedSchema": "public",
+      "referencedColumns": [
+        "id"
+      ]
+    }
+  ],
+  "stats": {
+    "deadRows": 0,
+    "liveRows": 0,
+    "indexBytes": 32768,
+    "tableBytes": 0,
+    "toastBytes": 8192,
+    "totalBytes": 40960,
+    "lastVacuumAt": null,
+    "estimatedRows": null,
+    "lastAnalyzeAt": null,
+    "lastAutovacuumAt": null,
+    "lastAutoanalyzeAt": null
+  },
+  "inventory": {
+    "name": "helpdesk_tickets",
+    "schema": "public",
+    "columns": 17,
+    "indexes": 4,
+    "sizeBytes": 40960,
+    "foreignKeys": 1,
+    "estimatedRows": null,
+    "hasPrimaryKey": true
+  }
+}

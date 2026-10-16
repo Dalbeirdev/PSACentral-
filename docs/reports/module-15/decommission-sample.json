@@ -1,0 +1,77 @@
+{
+  "deployment": "DEP-00029",
+  "client": "CL-00007",
+  "license": "LIC-00027",
+  "steps": [
+    {
+      "step": "decommissioned",
+      "detail": {
+        "at": "2026-10-16T03:19:20.969Z",
+        "reason": "Contract ended; the site closed on 30 September",
+        "by": "Avery Vance",
+        "fromState": "verified",
+        "identity": {
+          "tokensRevoked": 0,
+          "packagesRevoked": 0,
+          "commandsCancelled": 0,
+          "certificatesRevoked": 1
+        },
+        "retainedUntil": "2027-01-14T03:19:20.969Z",
+        "metadataPurgedAt": null
+      }
+    },
+    {
+      "step": "appliance",
+      "agentState": "decommissioned"
+    },
+    {
+      "step": "wiped",
+      "leftovers": [
+        "0",
+        "0",
+        "secrets-gone"
+      ]
+    },
+    {
+      "step": "removed",
+      "recordStatus": 404,
+      "audit": [
+        {
+          "action": "deployment.removed",
+          "actor": "avery.admin@psacc.test",
+          "outcome": "success"
+        },
+        {
+          "action": "deployment.decommissioned",
+          "actor": "avery.admin@psacc.test",
+          "outcome": "success"
+        },
+        {
+          "action": "deployment.verified",
+          "actor": "Health evaluation",
+          "outcome": "success"
+        },
+        {
+          "action": "agent.enrolled",
+          "actor": "Agent a86b239d-49a5-4c25-ac0d-52764598c8cb",
+          "outcome": "success"
+        },
+        {
+          "action": "deployment.package.downloaded",
+          "actor": "avery.admin@psacc.test",
+          "outcome": "success"
+        },
+        {
+          "action": "deployment.package.generated",
+          "actor": "avery.admin@psacc.test",
+          "outcome": "success"
+        },
+        {
+          "action": "deployment.created",
+          "actor": "avery.admin@psacc.test",
+          "outcome": "success"
+        }
+      ]
+    }
+  ]
+}

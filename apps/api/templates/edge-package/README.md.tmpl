@@ -1,0 +1,64 @@
+# PSA Edge deployment package — {{deploymentCode}}
+
+| | |
+|---|---|
+| Client | {{clientName}} ({{clientCode}}) |
+| Deployment | {{deploymentCode}} · `{{deploymentId}}` |
+| Installation ID | `{{installationId}}` |
+| Package | #{{packageNumber}}, generated {{generatedAt}} by {{generatedBy}} |
+| PSA | {{psaProviderName}} — {{psaDisplayName}} ({{psaCode}}) |
+| Services | {{servicesList}} |
+| Target | {{targetEnvironmentLabel}} · {{targetOs}} / {{targetArch}}{{hostLabelSuffix}} |
+| PSA Edge image | `{{edgeImageRef}}` |
+| Enrollment token | single use, valid until **{{tokenExpiresAt}}** |
+
+## What this package is
+
+This ZIP contains the client-specific **configuration** for one installation of the standard
+PSA Edge appliance: Docker Compose files, the appliance configuration, a single-use enrollment
+token and install / verify scripts. **It is not a Docker image.** The PSA Edge image is the same
+for every client and is pulled from the registry (or built from source in development).
+
+The appliance runs entirely on this host: the PSA integration, ticket processing and
+synchronization, and its own PostgreSQL database. Ticket content and PSA credentials stay here.
+The agent reports only approved health and metadata to the Control Plane over an outbound
+connection.
+
+## Quick start
+
+Linux Docker host:
+
+```bash
+unzip {{archiveName}} && cd {{rootFolder}}
+scripts/install.sh            # add --production for production hosts
+scripts/verify.sh
+```
+
+Windows Docker host (Docker Desktop with Linux containers):
+
+```powershell
+Expand-Archive {{archiveName}}; Set-Location {{rootFolder}}
+powershell -ExecutionPolicy Bypass -File scripts\install.ps1      # add -Production for production hosts
+powershell -ExecutionPolicy Bypass -File scripts\verify.ps1
+```
+
+See **INSTALL.md** for prerequisites and details, and **UNINSTALL.md** to remove the appliance.
+
+## Files
+
+| File | Purpose |
+|---|---|
+| `compose.yaml` | The appliance: database, migrations, API + local admin UI, PSA worker, agent, backups |
+| `compose.production.yaml` | Production overrides: images pinned by digest, resource limits |
+| `config/edge.json` | Non-secret appliance configuration (deployment identity, PSA settings, services) |
+| `config/edge.env.template` | Optional local settings (port, image overrides, proxy) |
+| `enrollment/enrollment.json` | **Single-use enrollment token.** Treat it like a password until the appliance has enrolled |
+| `scripts/install.sh`, `scripts/install.ps1` | Generate this host's secrets, validate and start the appliance |
+| `scripts/verify.sh`, `scripts/verify.ps1` | Check the local installation |
+| `scripts/upgrade.sh`, `scripts/upgrade.ps1` | Apply an image upgrade staged by a signed remote command (the appliance has no Docker socket; the change happens on this host) |
+| `scripts/uninstall.sh`, `scripts/uninstall.ps1` | Stop the appliance, or wipe it (`--wipe --confirm {{deploymentCode}}`) after the Control Plane decommissioned the deployment; always run by the host operator, never remotely |
+| `scripts/edge-backup.sh` | Local database backups (run by the `edge-backup` service) |
+| `manifest.json`, `CHECKSUMS.sha256` | File list and SHA-256 checksums (`sha256sum -c CHECKSUMS.sha256`) |
+
+No permanent secret is included. Database passwords and the data-encryption key are generated on
+this host by the install script, and PSA credentials are entered in the local admin UI.
