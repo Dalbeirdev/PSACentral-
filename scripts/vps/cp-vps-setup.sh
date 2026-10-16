@@ -37,7 +37,8 @@ if ! command -v docker >/dev/null 2>&1; then
 else
   apt-get install -y -q git ufw >/dev/null 2>&1 || true
 fi
-systemctl enable --now docker
+if command -v systemctl >/dev/null 2>&1 && systemctl is-system-running >/dev/null 2>&1; then systemctl enable --now docker; fi
+docker info >/dev/null 2>&1 || fail "Docker Engine is not running."
 docker compose version
 
 if [ "${PSACC_SKIP_FIREWALL:-0}" = 1 ]; then
