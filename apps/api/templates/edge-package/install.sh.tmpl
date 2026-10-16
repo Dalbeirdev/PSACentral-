@@ -75,7 +75,17 @@ step "Getting images"
 if [ "$PROFILE" = production ]; then
   "${COMPOSE[@]}" pull
 else
-  "${COMPOSE[@]}" pull --ignore-pull-failures || true
+  # Development profile: images already on this host (for example a locally built PSA Edge image) are
+  # used as they are; only missing ones are pulled, so no misleading registry errors appear.
+  for img in $("${COMPOSE[@]}" config --images | sort -u); do
+    if docker image inspect "$img" >/dev/null 2>&1; then
+      echo "  present  $img"
+    elif docker pull -q "$img" >/dev/null 2>&1; then
+      echo "  pulled   $img"
+    else
+      echo "  WARNING  $img is not on this host and could not be pulled; the start may fail"
+    fi
+  done
 fi
 
 step "Starting the appliance"
