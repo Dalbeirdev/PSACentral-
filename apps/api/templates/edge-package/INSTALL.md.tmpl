@@ -75,6 +75,22 @@ scripts/upgrade.sh
 
 Windows hosts: `powershell -ExecutionPolicy Bypass -File scripts\upgrade.ps1`. The script reads the staged order, pulls the image (checking the digest when one is pinned), records it in `.env` and recreates the services. Data volumes and secrets are untouched. The agent reports the new version to the Control Plane with its next heartbeat. Roll back with `scripts/upgrade.sh --image <previous image>`.
 
+## Windows machine without Docker Desktop (Docker Engine inside WSL)
+
+If `docker` is not available in PowerShell because Docker Engine runs inside WSL (common on developer
+and demo machines), do not use `scripts\install.ps1`. Run the package through WSL with the helper
+shipped in the PSA Control Center repository (`scripts/edge/Install-EdgePackage.ps1`):
+
+```powershell
+.\Install-EdgePackage.ps1 -Zip "$env:USERPROFILE\Downloads\{{archiveName}}"
+.\Install-EdgePackage.ps1 -Status {{deploymentCode}}
+```
+
+It unpacks the package into WSL (`/opt/psa-edge/{{projectName}}`), runs this package's own
+`scripts/install.sh` and `scripts/verify.sh` there, and prints the local admin URL
+(`http://localhost:{{localAdminPort}}`, reachable from Windows). `-Stop` and `-Wipe` map to
+`scripts/uninstall.sh`.
+
 ## 7. Decommissioning and removal
 
 When the deployment ends, the Control Plane administrator **decommissions** it first: its identity is retired, the appliance stops PSA work at its next heartbeat and shows *Decommissioned* in the local admin. Then, on this host, `scripts/uninstall.sh` stops the appliance and keeps its data, and `scripts/uninstall.sh --wipe --confirm {{deploymentCode}}` deletes the data volumes, `./secrets` and `.env` (Windows: `scripts\uninstall.ps1 -Wipe -Confirm {{deploymentCode}}`). The script refuses to wipe while the agent still reports an active identity. See **UNINSTALL.md**.

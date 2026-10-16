@@ -91,6 +91,7 @@ Go is not required locally: these commands run in the official `golang:1.25-alpi
 | `pnpm edge:tidy` | `go mod tidy` and `go mod verify` |
 | `pnpm edge:export` | Writes `dist/edge/psa-edge-<version>.tar` (+ checksum, image ID) for air-gapped clients |
 | `pnpm cp:setup` / `cp:build` / `cp:up` / `cp:down` / `cp:destroy` | Containerized Control Plane (`infra/control-plane`): generate secrets, build the API and web images, start / stop / remove the stack |
+| `scripts/edge/Install-EdgePackage.ps1 -Zip <package.zip>` | Install a downloaded deployment package on a Windows machine whose Docker Engine runs inside WSL (no Docker Desktop); `-Status`, `-Stop`, `-Wipe` |
 | `pnpm cp:bootstrap` | First organization and administrator (idempotent, audited) |
 | `pnpm cp:backup` / `cp:restore <file>` | Control Plane database backup and restore (`docs/RUNBOOKS.md`) |
 | `pnpm test:milestone` | First-milestone acceptance: two client appliances against the containerized Control Plane |
