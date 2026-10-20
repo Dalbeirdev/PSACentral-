@@ -77,6 +77,33 @@ mandatory in production; change the password afterwards. The agent gateway answe
 `https://techpio.tech:8643` with the platform CA's certificate (pinned by every package, so no
 public certificate is involved there).
 
+## 5b. Option A — sharing the PioDesk VPS (ports 8443 / 8643), decided 2026-10-20
+
+The Control Plane can run on the VPS that already hosts PioDesk without touching PioDesk: PioDesk's nginx
+keeps ports 80 and 443, the Control Plane takes `https://techpio.tech:8443` (dashboard) and `:8643`
+(agent gateway). What changes compared with the dedicated-VPS procedure above:
+
+| Step | Dedicated VPS | Shared VPS (coexistence) |
+|---|---|---|
+| Prepare | `cp-vps-setup.sh` | `PSACC_COEXIST=1 cp-vps-setup.sh` — Docker is reused if present; the firewall is only *added to* (8443, 8643) and only when ufw is already active; the script asks for a **Hostinger API token** (panel → Account → API; input hidden, stored in `.env` mode 600) |
+| DNS | `A` records → the new VPS | nothing: `techpio.tech` already points at this VPS |
+| Certificate | `cp.sh cert` (HTTP-01 on port 80) | `cp.sh dns-test` once (creates and removes one `_psacc-dns-test` TXT record to prove the token), then `cp.sh cert` — Let's Encrypt **DNS-01** through the Hostinger DNS API (`scripts/vps/hostinger-dns-hook.py`, standard library only, token never printed); renewal by the certbot sidecar the same way |
+| Edge | nginx on 80/443 | `compose.coexist.yaml` overlay: nginx on **8443 only** (`PSACC_HTTPS_PORT`; pick another free port if 8443 is taken on that server), no HTTP listener, no redirect |
+| URLs | `https://techpio.tech` | `https://techpio.tech:8443` (allowed origins carry the port); appliances dial `https://techpio.tech:8643` as before |
+| Everything else | — | unchanged: build, push-edge, up, bootstrap, backup, update, status (`cp.sh status` checks the configured port) |
+
+Rehearsed on the workstation on 2026-10-20 (on 9443, because 8443 is the development gateway there): the merged
+Compose configuration publishes only the HTTPS port for the edge, the stack came up with a self-signed certificate, sign-in with the `:8443` origin
+succeeded and a plain-http origin was refused, and the certbot sidecar runs with the DNS hook mounted.
+The hook itself is exercised against a fake Hostinger API (request shapes, relative record names for the
+apex and `www`, authorization header, cleanup leaving the zone as found, failure messages without the
+token). The real API call is proven on the VPS by `cp.sh dns-test` before any certificate is attempted.
+
+What stays shared and what does not: CPU, memory and disk of the VPS are shared with PioDesk (watch
+`free -m` and `df -h` after the first weeks); nothing else is — separate Compose project, networks,
+volumes, database and ports. Removing the Control Plane later is `cp.sh down` plus deleting the
+`psacc-cp-*` volumes; PioDesk is unaffected throughout.
+
 ## 6. Day-to-day
 
 | Task | Command |

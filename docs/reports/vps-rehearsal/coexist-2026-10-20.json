@@ -1,0 +1,20 @@
+{
+  "rehearsal": "Option A — Control Plane sharing a server whose ports 80/443 belong to another product (coexistence overlay)",
+  "date": "2026-10-20",
+  "host": "workstation (WSL Docker Engine), self-signed certificate; HTTPS port 9443 here because 8443 is the development gateway on this machine (the VPS default is 8443)",
+  "mergedComposePorts": { "edge": [["9443", 443]], "api": [["4410 (loopback)", 4210], ["8643", 8443]], "port80": "not published" },
+  "checksFromWindows": {
+    "dashboardLoginPage": 200,
+    "signInWithHttpsPortOrigin": "400 (reached the API; request validated, origin accepted)",
+    "signInWithPlainHttpOrigin": "403 (origin refused, as in production)",
+    "agentGatewayHealth8643": 200,
+    "port80": "no listener (000)",
+    "port443": "no listener (000)"
+  },
+  "cpStatus": { "apiLive": 200, "dashboard": 200, "agentGateway": 200, "certificateSubject": "CN=10.185.246.229 (self-signed, 30 days)" },
+  "psaccListenersOn80or443": 0,
+  "certbotSidecar": { "hookMounted": "/opt/psacc/hostinger-dns-hook.py", "renewal": "certbot renew with DNS-01 manual hooks" },
+  "dnsHookUnitTest": "scratch test against a fake Hostinger API: PUT/GET/DELETE shapes, relative names for apex (_acme-challenge) and www (_acme-challenge.www), bearer header, zone left as found, wrong/missing token and foreign name refused without printing the token — ALL OK",
+  "notProvenHere": "the real Hostinger DNS API call (needs the account's API token): proven on the VPS by `scripts/vps/cp.sh dns-test` before any certificate is requested",
+  "pioDeskImpact": "none: separate Compose project, volumes, networks, database and ports; nothing of the other product read, written or restarted"
+}

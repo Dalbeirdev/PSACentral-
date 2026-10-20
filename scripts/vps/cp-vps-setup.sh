@@ -17,6 +17,12 @@ DOMAIN="${PSACC_DOMAIN:-techpio.tech}"
 ADMIN_EMAIL="${PSACC_ADMIN_EMAIL:-}"
 EDGE_REPO="${PSACC_EDGE_IMAGE_REPOSITORY:-ghcr.io/dalbeirdev/psa-edge}"
 GATEWAY_PORT="${PSACC_GATEWAY_PORT:-8643}"
+# Coexistence with another product on the same server (PioDesk owns 80/443): PSACC_COEXIST=1 keeps the
+# Control Plane on its own ports (dashboard PSACC_HTTPS_PORT, gateway PSACC_GATEWAY_PORT) and validates
+# certificates by DNS through the Hostinger API (HOSTINGER_API_TOKEN, asked for below, never printed).
+COEXIST="${PSACC_COEXIST:-0}"
+HTTPS_PORT="${PSACC_HTTPS_PORT:-8443}"
+[ "$COEXIST" = 1 ] || HTTPS_PORT="${PSACC_HTTPS_PORT:-443}"
 
 step() { printf '\n==> %s\n' "$1"; }
 fail() { printf 'ERROR: %s\n' "$1" >&2; exit 1; }
@@ -46,12 +52,24 @@ if [ "${PSACC_SKIP_FIREWALL:-0}" = 1 ]; then
 else
   step "Firewall: SSH, HTTP, HTTPS and the agent gateway ($GATEWAY_PORT) only"
   command -v ufw >/dev/null 2>&1 || apt-get install -y -q ufw
+  if [ "$COEXIST" = 1 ]; then
+    # Another product owns this server's firewall policy: only this product's two ports are added, and only
+    # when ufw is already active; nothing is enabled, removed or changed otherwise.
+    if ufw status 2>/dev/null | grep -q '^Status: active'; then
+      ufw allow "$HTTPS_PORT/tcp" >/dev/null
+      ufw allow "$GATEWAY_PORT/tcp" >/dev/null
+      echo "  ufw active: allowed $HTTPS_PORT/tcp and $GATEWAY_PORT/tcp (nothing else touched)"
+    else
+      echo "  ufw not active: no firewall change (open $HTTPS_PORT/tcp and $GATEWAY_PORT/tcp in whatever manages this server's firewall)"
+    fi
+  else
   ufw allow OpenSSH >/dev/null
   ufw allow 80/tcp >/dev/null
   ufw allow 443/tcp >/dev/null
   ufw allow "$GATEWAY_PORT/tcp" >/dev/null
   ufw --force enable >/dev/null
   ufw status | sed 's/^/  /'
+  fi
 fi
 
 step "Repository in $TARGET"
@@ -64,7 +82,13 @@ chmod +x "$TARGET"/scripts/vps/*.sh
 
 ENV_FILE="$TARGET/infra/control-plane/.env"
 case "$EDGE_REPO" in *:*) fail "PSACC_EDGE_IMAGE_REPOSITORY must not contain a port ($EDGE_REPO): use a registry host such as ghcr.io/<owner>/psa-edge." ;; esac
-case "$DOMAIN" in *[a-z]*) ORIGINS="https://$DOMAIN,https://www.$DOMAIN" ;; *) ORIGINS="https://$DOMAIN" ;; esac  # an IP address has no www
+PORT_SUFFIX=""; [ "$HTTPS_PORT" = 443 ] || PORT_SUFFIX=":$HTTPS_PORT"
+case "$DOMAIN" in *[a-z]*) ORIGINS="https://$DOMAIN$PORT_SUFFIX,https://www.$DOMAIN$PORT_SUFFIX" ;; *) ORIGINS="https://$DOMAIN$PORT_SUFFIX" ;; esac  # an IP address has no www
+HOSTINGER_TOKEN=""
+if [ "$COEXIST" = 1 ] && [ ! -f "$ENV_FILE" ]; then
+  echo "  Coexistence mode: dashboard on https://$DOMAIN$PORT_SUFFIX, agent gateway on $GATEWAY_PORT; certificates by DNS validation."
+  while [ -z "$HOSTINGER_TOKEN" ]; do read -r -s -p "  Hostinger API token (panel -> Account -> API; input hidden): " HOSTINGER_TOKEN; echo; done
+fi
 step "Production environment file $ENV_FILE"
 if [ -f "$ENV_FILE" ]; then
   echo "  exists — kept (delete it to regenerate; secrets are never printed)."
@@ -84,6 +108,11 @@ OPENAPI_ENABLED=false
 AUTH_MFA_REQUIRED=true
 PSACC_DOMAIN=$DOMAIN
 LETSENCRYPT_EMAIL=$ADMIN_EMAIL
+# Coexistence (another product owns 80/443 on this server): 1 keeps the edge on PSACC_HTTPS_PORT only and
+# validates certificates by DNS through the Hostinger API.
+PSACC_COEXIST=$COEXIST
+PSACC_HTTPS_PORT=$HTTPS_PORT
+HOSTINGER_API_TOKEN=$HOSTINGER_TOKEN
 WEB_PORT=3410
 API_PORT=4410
 APP_ALLOWED_ORIGINS=$ORIGINS
@@ -117,7 +146,7 @@ Prepared. Remaining steps (details in docs/DEPLOY-VPS.md):
   1. Point the DNS A record of $DOMAIN (and www) at this server's address, then wait until it resolves (skip for an IP-address rehearsal).
   2. cd $TARGET && scripts/vps/cp.sh build        # API, web and edge images (several minutes)
   3. docker login <registry> && scripts/vps/cp.sh push-edge   # client packages pull $EDGE_REPO; records the digest
-  4. scripts/vps/cp.sh cert                        # Let's Encrypt certificate for $DOMAIN
+  4. scripts/vps/cp.sh cert                        # Let's Encrypt certificate for $DOMAIN$( [ "$COEXIST" = 1 ] && printf ' (DNS validation; run scripts/vps/cp.sh dns-test first)' )
   5. scripts/vps/cp.sh up && scripts/vps/cp.sh bootstrap && scripts/vps/cp.sh status
-  6. Sign in at https://$DOMAIN, enrol MFA (required in production), change the password.
+  6. Sign in at https://$DOMAIN$PORT_SUFFIX, enrol MFA (required in production), change the password.
 EOF

@@ -1,0 +1,24 @@
+# PSA Control Center — coexistence overlay: the Control Plane on a server whose ports 80 and 443 belong
+# to another product (PioDesk's nginx on the same Hostinger VPS). Applied after compose.public.yaml by
+# scripts/vps/cp.sh when PSACC_COEXIST=1 in .env:
+#   docker compose --env-file .env -f compose.yaml -f compose.public.yaml -f compose.coexist.yaml up -d
+# - The edge binds only PSACC_HTTPS_PORT (default 8443) on the host; port 80 is never touched, so there is
+#   no HTTP redirect and no ACME webroot. The dashboard is https://<domain>:8443.
+# - Certificates come from Let's Encrypt by DNS-01 validation through the Hostinger DNS API (certbot manual
+#   hooks, scripts/vps/hostinger-dns-hook.py); the certbot sidecar renews the same way.
+# - The agent gateway keeps its own listener on AGENT_GATEWAY_PORT (8643).
+# Nothing of the other product is read, written or restarted.
+services:
+  edge:
+    ports: !override
+      - "${PSACC_HTTPS_PORT:-8443}:443"
+
+  certbot:
+    environment:
+      HOSTINGER_API_TOKEN: ${HOSTINGER_API_TOKEN:?set HOSTINGER_API_TOKEN in .env (Hostinger panel → Account → API)}
+      HOSTINGER_DNS_ZONE: ${PSACC_DOMAIN}
+    volumes:
+      - ../../scripts/vps/hostinger-dns-hook.py:/opt/psacc/hostinger-dns-hook.py:ro
+    # certbot remembers the manual hooks from the first issuance in the renewal configuration; the script
+    # must therefore be at the same path here as during `cp.sh cert`.
+    entrypoint: ["/bin/sh", "-c", "trap exit TERM; while :; do sleep $$((RANDOM % 3600)); certbot renew --quiet --manual-auth-hook 'python3 /opt/psacc/hostinger-dns-hook.py auth' --manual-cleanup-hook 'python3 /opt/psacc/hostinger-dns-hook.py cleanup'; sleep 12h & wait $${!}; done"]

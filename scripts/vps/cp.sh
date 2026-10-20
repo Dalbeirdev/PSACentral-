@@ -23,7 +23,16 @@ cd "$CP"
 
 env_get() { sed -n "s/^$1=//p" "$ENV_FILE" | head -n 1; }
 need_env() { [ -f "$ENV_FILE" ] || { echo "ERROR: $ENV_FILE is missing. Run scripts/vps/cp-vps-setup.sh first." >&2; exit 1; }; }
-compose() { docker compose --env-file "$ENV_FILE" -f compose.yaml -f compose.public.yaml "$@"; }
+# Coexistence (PSACC_COEXIST=1): the overlay that keeps the edge off ports 80/443 and renews certificates by DNS.
+compose() {
+  if [ "$(env_get PSACC_COEXIST)" = 1 ]; then
+    docker compose --env-file "$ENV_FILE" -f compose.yaml -f compose.public.yaml -f compose.coexist.yaml "$@"
+  else
+    docker compose --env-file "$ENV_FILE" -f compose.yaml -f compose.public.yaml "$@"
+  fi
+}
+https_port() { p="$(env_get PSACC_HTTPS_PORT)"; echo "${p:-443}"; }
+dashboard_url() { d="$(env_get PSACC_DOMAIN)"; p="$(https_port)"; if [ "$p" = 443 ]; then echo "https://$d"; else echo "https://$d:$p"; fi; }
 step() { printf '\n==> %s\n' "$1"; }
 
 cmd="${1:-}"; shift || true
@@ -55,6 +64,19 @@ case "$cmd" in
       exit 0
     fi
     [ -n "$DOMAIN" ] && [ -n "$EMAIL" ] || { echo "ERROR: PSACC_DOMAIN and LETSENCRYPT_EMAIL must be set in .env" >&2; exit 1; }
+    if [ "$(env_get PSACC_COEXIST)" = 1 ] || [ "$(env_get PSACC_CERT_DNS)" = hostinger ]; then
+      # Port 80 belongs to another product here: validate by DNS through the Hostinger API instead.
+      TOKEN="$(env_get HOSTINGER_API_TOKEN)"
+      [ -n "$TOKEN" ] || { echo "ERROR: HOSTINGER_API_TOKEN must be set in .env (Hostinger panel -> Account -> API)" >&2; exit 1; }
+      step "Issuing the certificate with certbot (DNS-01 validation through the Hostinger DNS API; port 80 is not used)"
+      docker run --rm -e HOSTINGER_API_TOKEN="$TOKEN" -e HOSTINGER_DNS_ZONE="$DOMAIN" \
+        -v psacc-cp-letsencrypt:/etc/letsencrypt -v "$ROOT/scripts/vps/hostinger-dns-hook.py:/opt/psacc/hostinger-dns-hook.py:ro" \
+        certbot/certbot certonly --manual --preferred-challenges dns --non-interactive --agree-tos --no-eff-email \
+        --manual-auth-hook "python3 /opt/psacc/hostinger-dns-hook.py auth" --manual-cleanup-hook "python3 /opt/psacc/hostinger-dns-hook.py cleanup" \
+        -m "$EMAIL" -d "$DOMAIN" -d "www.$DOMAIN"
+      echo "Certificate issued for $DOMAIN and www.$DOMAIN; start the stack with: scripts/vps/cp.sh up"
+      exit 0
+    fi
     step "Checking that $DOMAIN resolves to this host"
     MINE="$(curl -4 -s --max-time 10 https://api.ipify.org || true)"; THEIRS="$(getent ahostsv4 "$DOMAIN" | awk 'NR==1{print $1}')"
     echo "  this host: ${MINE:-unknown}   $DOMAIN: ${THEIRS:-unresolved}"
@@ -80,7 +102,7 @@ case "$cmd" in
     step "Health"
     printf '  API live:     '; curl -s -o /dev/null -w '%{http_code}\n' "http://127.0.0.1:$(env_get API_PORT)/api/v1/health/live" || true
     # --resolve: checks this host's own listeners even where the public address does not hairpin back (NAT, WSL).
-    printf '  Dashboard:    '; curl -sk --resolve "$DOMAIN:443:127.0.0.1" -o /dev/null -w '%{http_code}\n' "https://$DOMAIN/login" || true
+    printf '  Dashboard:    '; curl -sk --resolve "$DOMAIN:$(https_port):127.0.0.1" -o /dev/null -w '%{http_code}\n' "$(dashboard_url)/login" || true
     printf '  Agent gateway: '; curl -sk --resolve "$DOMAIN:$(env_get AGENT_GATEWAY_PORT):127.0.0.1" -o /dev/null -w '%{http_code}\n' "https://$DOMAIN:$(env_get AGENT_GATEWAY_PORT)/agent/v1/health" || true
     step "Certificate"
     docker run --rm -v psacc-cp-letsencrypt:/etc/letsencrypt:ro --entrypoint sh alpine/openssl -c "openssl x509 -in /etc/letsencrypt/live/$DOMAIN/fullchain.pem -noout -subject -issuer -enddate 2>/dev/null" | sed 's/^/  /' || true
@@ -88,6 +110,14 @@ case "$cmd" in
     ;;
   logs)
     need_env; compose logs -f --tail 200 "$@" ;;
+  dns-test)
+    # Proves the Hostinger API token before a certificate is attempted: creates and removes one harmless TXT record.
+    need_env
+    TOKEN="$(env_get HOSTINGER_API_TOKEN)"; DOMAIN="$(env_get PSACC_DOMAIN)"
+    [ -n "$TOKEN" ] || { echo "ERROR: HOSTINGER_API_TOKEN must be set in .env" >&2; exit 1; }
+    docker run --rm -e HOSTINGER_API_TOKEN="$TOKEN" -v "$ROOT/scripts/vps/hostinger-dns-hook.py:/opt/psacc/hostinger-dns-hook.py:ro" \
+      --entrypoint python3 certbot/certbot /opt/psacc/hostinger-dns-hook.py test "$DOMAIN"
+    ;;
   bootstrap)
     need_env
     step "Creating the first organization and administrator (idempotent)"
