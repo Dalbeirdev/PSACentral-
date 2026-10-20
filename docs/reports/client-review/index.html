@@ -1,0 +1,151 @@
+<title>PSA Control Center Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap">
+<style>
+  /* Layout: a single reading column (72ch) with full-bleed screenshot frames; a quiet, technical register. */
+  :root {
+    --bg: #f6f7fb;
+    --surface: #ffffff;
+    --fg: #15213a;
+    --muted: #5b6579;
+    --line: #d9deea;
+    --accent: #1f5fd1;
+    --accent-ink: #ffffff;
+    --good: #0f7b4f;
+    --warn: #b45309;
+    --display: "Fraunces", Georgia, "Times New Roman", serif;
+    --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", Consolas, "SFMono-Regular", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #0f1522; --surface: #171f31; --fg: #e8ecf5; --muted: #9aa5bd; --line: #2a3450; --accent: #7aa6ff; --accent-ink: #0f1522; --good: #4cc38a; --warn: #f0a24b; color-scheme: dark; }
+  }
+  :root[data-theme="dark"] { --bg: #0f1522; --surface: #171f31; --fg: #e8ecf5; --muted: #9aa5bd; --line: #2a3450; --accent: #7aa6ff; --accent-ink: #0f1522; --good: #4cc38a; --warn: #f0a24b; color-scheme: dark; }
+  body { background: var(--bg); color: var(--fg); font-family: var(--body); line-height: 1.55; font-size: 16px; }
+  .wrap { max-width: 980px; margin: 0 auto; padding-block: 32px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  header.hero { display: grid; gap: 14px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-family: var(--display); font-weight: 600; font-size: clamp(30px, 4.5vw, 44px); line-height: 1.1; margin: 0; text-wrap: balance; }
+  .lede { max-width: 68ch; font-size: 18px; color: var(--fg); margin: 0; }
+  .facts { display: flex; flex-wrap: wrap; gap: 10px 22px; font-size: 14px; color: var(--muted); }
+  .facts b { color: var(--fg); font-weight: 600; }
+  h2 { font-family: var(--display); font-weight: 600; font-size: 26px; margin: 44px 0 10px; text-wrap: balance; }
+  h3 { font-size: 17px; font-weight: 600; margin: 26px 0 8px; }
+  p { max-width: 72ch; margin: 0 0 12px; }
+  ul { max-width: 72ch; padding-left: 20px; margin: 0 0 12px; }
+  li { margin-bottom: 6px; }
+  .pill { display: inline-block; font-family: var(--mono); font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); vertical-align: middle; }
+  .pill.good { color: var(--good); border-color: color-mix(in srgb, var(--good) 40%, var(--line)); }
+  .pill.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); }
+  figure { margin: 18px 0 26px; }
+  figure .frame { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  figure img { display: block; width: 100%; max-width: 100%; height: auto; }
+  figcaption { font-size: 13.5px; color: var(--muted); margin-top: 8px; max-width: 72ch; }
+  .steps { counter-reset: s; display: grid; gap: 12px; margin: 14px 0 6px; padding: 0; list-style: none; max-width: 72ch; }
+  .steps li { display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; }
+  .steps li::before { counter-increment: s; content: counter(s); font-family: var(--mono); font-size: 13px; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--accent); color: var(--accent-ink); }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin: 14px 0 6px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; min-width: 0; }
+  .card h3 { margin: 0 0 6px; font-size: 16px; }
+  .card p { font-size: 14.5px; color: var(--muted); margin: 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; margin: 10px 0 16px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-weight: 600; color: var(--muted); font-size: 13px; letter-spacing: 0.02em; }
+  .tablewrap { overflow-x: auto; }
+  code { font-family: var(--mono); font-size: 0.92em; }
+  footer { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--muted); max-width: 72ch; }
+  a { color: var(--accent); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">Client review · October 2026</div>
+    <h1>PSA Control Center: your help-desk data stays with you</h1>
+    <p class="lede">A management console for your IT service provider and an appliance that runs on your own server. The appliance holds every ticket and every PSA credential. The provider's console sees health, versions and counts, and never a ticket.</p>
+    <div class="facts">
+      <span><b>Modules delivered</b> 17 of 17</span>
+      <span><b>Automated tests</b> 573 passing</span>
+      <span><b>Appliance</b> Docker, Linux or Windows (WSL)</span>
+      <span><b>Status</b> <span class="pill good">demo-ready</span></span>
+    </div>
+  </header>
+
+  <h2>How it works</h2>
+  <div class="grid2">
+    <div class="card"><h3>Your appliance</h3><p>A small Docker stack on a machine at your site: its own PostgreSQL database, a local administration page reachable only from that machine, a worker that talks to your PSA, and an agent that reports health to the provider.</p></div>
+    <div class="card"><h3>The provider's console</h3><p>Onboards you, generates your installation package, watches health and versions, manages the licence, and can pause or retire the appliance. It never receives ticket data or credentials.</p></div>
+    <div class="card"><h3>Outbound only</h3><p>The appliance dials out over mutual TLS with its own machine certificate. Nothing connects into your network, and the provider has no path to your data.</p></div>
+    <div class="card"><h3>Keeps working offline</h3><p>If the provider's console is unreachable, tickets and synchronization continue. The licence token is valid for 30 days with a further 14 days of grace.</p></div>
+  </div>
+
+  <h2>What you would see</h2>
+  <figure>
+    <div class="frame"><img src="img/overview.png" alt="Provider console: deployment overview for DEP-00030 showing lifecycle stages, identity and platform details" loading="lazy"></div>
+    <figcaption>The provider's view of one appliance: lifecycle (package generated, downloaded, installed, verified), identity and licence, platform and image. Only metadata.</figcaption>
+  </figure>
+  <figure>
+    <div class="frame"><img src="img/health.png" alt="Provider console: health page with findings reported by the appliance" loading="lazy"></div>
+    <figcaption>Health as reported by the appliance itself: database, host resources, containers, PSA connection state, synchronization counts, backups and certificates.</figcaption>
+  </figure>
+  <figure>
+    <div class="frame"><img src="img/appliance-status.png" alt="Appliance local administration page: database, PSA integration and Control Plane status" loading="lazy"></div>
+    <figcaption>Your appliance's own administration page, served on your machine only: database, PSA integration (credentials are entered and tested here and never leave), and the connection to the provider.</figcaption>
+  </figure>
+
+  <h2>Licence enforcement without lock-in</h2>
+  <p>The appliance carries a signed licence token bound to your installation and verifies it against a key pinned into the appliance image. Suspending the licence on the provider's side stops PSA work within seconds; resuming restores it. Tickets, data and the administration page stay available throughout.</p>
+  <figure>
+    <div class="frame"><img src="img/license-revoked.png" alt="Appliance page with a red banner: licence token revoked, PSA work stopped, data and administration page still available" loading="lazy"></div>
+    <figcaption>What the appliance shows while the licence is suspended: a clear reason, PSA work paused, nothing deleted.</figcaption>
+  </figure>
+  <figure>
+    <div class="frame"><img src="img/license-detail.png" alt="Provider console: licence detail after the licence was resumed" loading="lazy"></div>
+    <figcaption>The licence on the provider's side after it was resumed; the appliance renewed its token on the next heartbeat.</figcaption>
+  </figure>
+
+  <h2>You can leave, completely</h2>
+  <p>From your appliance's administration page you can end the service yourself: type the deployment ID and your password, and the appliance tells the provider to delete every record about it, then deletes its own database, credentials, logs and identity. The provider keeps one audit entry that says you deleted it, nothing else.</p>
+  <figure>
+    <div class="frame"><img src="img/deletion-page.png" alt="Appliance page: Delete all data and deregister, with the four steps explained and a confirmation form" loading="lazy"></div>
+    <figcaption>The deletion page explains the four steps and asks for a typed confirmation.</figcaption>
+  </figure>
+  <figure>
+    <div class="frame"><img src="img/deletion-done.png" alt="Appliance page after deletion: all data deleted, counts per table on both sides, and the one remaining host command" loading="lazy"></div>
+    <figcaption>Afterwards: what was deleted on the provider's side and on the appliance, row by row, and the single command that removes the containers.</figcaption>
+  </figure>
+  <figure>
+    <div class="frame"><img src="img/audit.png" alt="Provider console: activity and audit logs filtered to the deleted-by-client event" loading="lazy"></div>
+    <figcaption>The only trace left with the provider: the audit event, with who asked and what was removed.</figcaption>
+  </figure>
+
+  <h2>Installing at your site</h2>
+  <ol class="steps">
+    <li><div>The provider onboards your company and generates a package for your appliance. The package is a small ZIP with a one-time enrollment token that expires.</div></li>
+    <li><div>On your machine, one command installs the appliance (Linux: <code>scripts/install.sh</code>; Windows with WSL: <code>psa-edge.cmd install</code>). It verifies itself with 13 checks.</div></li>
+    <li><div>You open the local administration page, create your administrator, enter your PSA credentials and run the connection test. The credentials are encrypted with a key that exists only on your machine.</div></li>
+    <li><div>The appliance enrolls with the provider over mutual TLS and reports health from then on. Tickets synchronize with your PSA from your site.</div></li>
+  </ol>
+  <figure>
+    <div class="frame"><img src="img/appliance-first-run.png" alt="Appliance first-run page asking to create the local administrator" loading="lazy"></div>
+    <figcaption>First visit after installation: create the local administrator.</figcaption>
+  </figure>
+
+  <h2>What the provider can and cannot do</h2>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Can</th><th>Cannot</th></tr></thead>
+    <tbody>
+      <tr><td>See health, versions, counts and the licence state</td><td>Read tickets, notes, attachments or PSA credentials</td></tr>
+      <tr><td>Send signed remote commands: refresh, connection test, synchronization, restart, certificate rotation, image upgrade</td><td>Run arbitrary commands, read files or connect into your network</td></tr>
+      <tr><td>Suspend or resume the licence; retire the appliance's identity</td><td>Delete, wipe or uninstall the appliance remotely</td></tr>
+      <tr><td>Keep an append-only audit trail of its own actions</td><td>Edit or remove audit entries</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>Verified, not promised</h2>
+  <p>Every module ships with a completion report whose numbers come from executed tests: unit tests, API tests against PostgreSQL with row-level security, browser tests, and scenarios that install two real appliances on a Docker engine and exercise enrollment, synchronization, outages, suspension, licence enforcement and deletion end to end. The latest run: <span class="pill good">573 of 573 passed</span>.</p>
+
+  <footer>Prepared for client review from the project's own test evidence and screenshots. Product names shown in sample data are synthetic. The provider's console and the appliance shown here run on the provider's demonstration environment.</footer>
+</div>

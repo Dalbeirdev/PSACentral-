@@ -8,6 +8,7 @@
     .\Install-EdgePackage.ps1 -Status DEP-00030        # containers, agent state, verification checks
     .\Install-EdgePackage.ps1 -Stop   DEP-00030        # stop, keep data
     .\Install-EdgePackage.ps1 -Wipe   DEP-00030        # remove everything (asks to type the ID)
+    .\Install-EdgePackage.ps1 -Repoint DEP-00030       # after this machine changed network: point the appliance at the new address
 
   The appliance lives in WSL under /opt/psa-edge/<project>; nothing is installed on Windows itself.
   Requires: WSL with Docker Engine (docker compose v2) — the same engine the development stack uses.
@@ -19,6 +20,7 @@ param(
   [Parameter(ParameterSetName = 'Status', Mandatory)] [string]$Status,
   [Parameter(ParameterSetName = 'Stop', Mandatory)] [string]$Stop,
   [Parameter(ParameterSetName = 'Wipe', Mandatory)] [string]$Wipe,
+  [Parameter(ParameterSetName = 'Repoint', Mandatory)] [string]$Repoint,
   [switch]$Production,
   [string]$Distro = ''
 )
@@ -121,6 +123,42 @@ switch ($PSCmdlet.ParameterSetName) {
     $project = Get-ProjectName $Stop; $dir = "$base/$project"; Test-Installed $dir $project
     Write-Step "Stopping $project (data, secrets and .env are kept; install the package again to resume)"
     exit (Invoke-Wsl "cd '$dir' && scripts/uninstall.sh")
+  }
+  'Repoint' {
+    # Demo on a laptop: the workstation's address changes between networks, and an enrolled appliance keeps the
+    # Control Plane's address in two package files. Rewrites both to this machine's current address, restarts
+    # the agent, and updates the dev Control Plane's AGENT_GATEWAY_URL when this helper runs from the repository.
+    $project = Get-ProjectName $Repoint; $dir = "$base/$project"; Test-Installed $dir $project
+    $current = Get-WslOutput "ip -4 route get 1.1.1.1 | awk '{for(i=1;i<=NF;i++) if(`$i==`"src`") print `$(i+1)}'"
+    if (-not $current) { Stop-WithError 'Could not determine this machine''s address inside WSL (no default route?).' }
+    $sedExpr = 's/.*agentGatewayUrl: *\([^,} ]*\).*/\1/p'
+    $gateway = Get-WslOutput "tr -d '`"' < '$dir/enrollment/enrollment.json' | sed -n '$sedExpr' | head -n 1"
+    if (-not $gateway) { Stop-WithError "No agentGatewayUrl found in $dir/enrollment/enrollment.json." }
+    $m = [regex]::Match($gateway, '^(https?://)([^/:]+)(:\d+)?')
+    if (-not $m.Success) { Stop-WithError "Unexpected gateway URL: $gateway" }
+    $old = $m.Groups[2].Value; $port = $m.Groups[3].Value
+    $new = "$($m.Groups[1].Value)$current$port"
+    Write-Step "Appliance ${project}: gateway $gateway -> $new"
+    if ($old -eq $current) {
+      Write-Host '  already pointed at this machine''s current address; nothing to change.'
+    } else {
+      $code = Invoke-Wsl "sed -i 's#$([regex]::Escape($old))#$current#g' '$dir/config/edge.json' '$dir/enrollment/enrollment.json' && cd '$dir' && docker compose -f compose.yaml restart edge-agent"
+      if ($code -ne 0) { Stop-WithError 'Could not rewrite the package files or restart the agent; see the output above.' }
+      Write-Host "  rewritten in config/edge.json and enrollment/enrollment.json; agent restarted (it reconnects within a heartbeat)."
+    }
+    $apiEnv = Join-Path $PSScriptRoot '..\..\apps\api\.env'
+    if (Test-Path $apiEnv) {
+      $lines = Get-Content $apiEnv
+      $idx = [array]::FindIndex($lines, [Predicate[string]]{ param($l) $l -like 'AGENT_GATEWAY_URL=*' })
+      if ($idx -ge 0 -and $lines[$idx] -ne "AGENT_GATEWAY_URL=$new") {
+        $lines[$idx] = "AGENT_GATEWAY_URL=$new"
+        Set-Content -Path $apiEnv -Value $lines -Encoding UTF8
+        Write-Host "  dev Control Plane: AGENT_GATEWAY_URL set to $new in apps/api/.env - restart the API (it reissues the gateway certificate for the new address)." -ForegroundColor Yellow
+      } else {
+        Write-Host '  dev Control Plane: apps/api/.env already carries this address.'
+      }
+    }
+    exit 0
   }
   'Wipe' {
     $project = Get-ProjectName $Wipe; $dir = "$base/$project"; Test-Installed $dir $project

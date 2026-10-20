@@ -92,19 +92,23 @@ install over a Compose project that already exists, so `psacc-dep-00030` is neve
 
 ## If something is off
 
+- *Everything stops answering at once* (dashboard, appliance, database): the WSL virtual machine restarted
+  (every container shows the same short uptime in `docker ps`). The containers come back by themselves;
+  the two dashboard dev servers do not, so start them again (section 0). If the dashboard then cannot reach
+  its database, recreate that one container: `wsl -- docker compose -p psacc-dev -f "/mnt/e/PSA COntrole center/infra/dev/compose.yaml" up -d --force-recreate`.
 - *Not enrolled* after a few minutes: check `apps/api/.env` → `AGENT_GATEWAY_URL` must carry this
   machine's current address (`wsl -- ip -4 route get 1.1.1.1`); the workstation's address changes
   between networks. Fix it, restart the API, and run the install helper again (idempotent).
 - An *enrolled* appliance stops heartbeating after the workstation changed networks (its agent log says
-  `heartbeat failed … context deadline exceeded` against the old address): fix `AGENT_GATEWAY_URL` as
-  above, restart the API (it reissues the gateway certificate for the new address), then point the
-  appliance at it and restart its agent (the address is kept in `config/edge.json` and in the enrollment file; replace both addresses and the deployment code):
+  `heartbeat failed … context deadline exceeded` against the old address). One command fixes both sides:
 
-  ```powershell
-  wsl -u root -- sh -c "sed -i 's#https://10.0.0.1:8443#https://10.0.0.2:8443#' /opt/psa-edge/psacc-dep-00030/config/edge.json /opt/psa-edge/psacc-dep-00030/enrollment/enrollment.json && cd /opt/psa-edge/psacc-dep-00030 && docker compose restart edge-agent"
+  ```bash
+  scripts\edge\psa-edge.cmd repoint DEP-00030
   ```
 
-  The next heartbeat (15 s) brings it back to *Enrolled*; nothing else changes.
+  It rewrites the address in the appliance's `config/edge.json` and enrollment file, restarts the agent, and
+  updates `AGENT_GATEWAY_URL` in `apps/api/.env`; then restart the dev API (it reissues the gateway
+  certificate for the new address). The next heartbeat brings the appliance back to *Enrolled*.
 - Forgotten local admin password: the appliance has no reset page on purpose. Remove the account
   from the host and run the first-run setup again (tickets, PSA credentials and the enrollment stay):
 
